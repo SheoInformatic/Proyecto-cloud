@@ -1,0 +1,40 @@
+server:
+  port: 8081
+
+spring:
+  application:
+    name: order-service
+
+  # Conexión Base de Datos Cloud (GCP Cloud SQL PostgreSQL)
+  datasource:
+    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:faster360_db}
+    username: ${DB_USER:postgres}
+    password: ${DB_PASSWORD:postgres}
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+
+  # Conexión RabbitMQ
+  rabbitmq:
+    host: ${RABBITMQ_HOST:localhost}
+    port: ${RABBITMQ_PORT:5672}
+    username: ${RABBITMQ_USER:guest}
+    password: ${RABBITMQ_PASSWORD:guest}
+
+# Configuración centralizada de RabbitMQ para Faster 360
+faster360:
+  messaging:
+    exchange: faster360.orders.exchange
+    dlx: faster360.orders.dlx
+    routing-keys:
+      order-created: order.created
+      dead-letter: order.dead-letter
+    queues:
+      notification: faster360.orders.notification.queue
+      ticket: faster360.orders.ticket.queue
+      dlq: faster360.orders.dlq

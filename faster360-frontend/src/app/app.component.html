@@ -1,0 +1,83 @@
+<div class="app-container">
+  <!-- Navbar -->
+  <header class="navbar">
+    <div class="brand">
+      <span class="logo-badge">360°</span>
+      <h1>Faster 360</h1>
+    </div>
+
+    <div class="user-actions">
+      <div *ngIf="currentUser; else loginBtn" class="user-badge">
+        <span class="dot-online"></span>
+        <span>{{ currentUser.name }} ({{ currentUser.email }})</span>
+        <button class="btn-secondary" (click)="logout()">Cerrar Sesión</button>
+      </div>
+      <ng-template #loginBtn>
+        <button class="btn-primary" (click)="loginDemo()">Iniciar Sesión (IDaaS)</button>
+      </ng-template>
+    </div>
+  </header>
+
+  <!-- Contenido Principal -->
+  <main class="main-layout">
+    <!-- Catálogo de Productos -->
+    <section class="catalog-section">
+      <h2>Catálogo Destacado</h2>
+      <div class="grid-cards">
+        <div class="card" *ngFor="let item of products">
+          <img [src]="item.image" [alt]="item.name" class="card-img" />
+          <div class="card-body">
+            <span class="tag">{{ item.category }}</span>
+            <h3>{{ item.name }}</h3>
+            <p>{{ item.description }}</p>
+            <div class="card-footer">
+              <span class="price">${{ item.price | number:'1.0-0' }}</span>
+              <button class="btn-add" (click)="addToCart(item)">Agregar al Carro</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Barra Lateral: Carrito y Checkout -->
+    <aside class="cart-sidebar">
+      <h2>Tu Pedido</h2>
+
+      <div *ngIf="cart.length === 0" class="empty-cart">
+        <p>No tienes productos en el carro.</p>
+      </div>
+
+      <div *ngIf="cart.length > 0" class="cart-items">
+        <div class="cart-row" *ngFor="let c of cart; let idx = index">
+          <div>
+            <strong>{{ c.product.name }}</strong>
+            <div class="cart-qty">Cant: {{ c.quantity }} x ${{ c.product.price | number:'1.0-0' }}</div>
+          </div>
+          <button class="btn-del" (click)="removeFromCart(idx)">&times;</button>
+        </div>
+
+        <div class="cart-total">
+          <span>Total a Pagar:</span>
+          <strong>${{ totalCart | number:'1.0-0' }}</strong>
+        </div>
+
+        <button class="btn-checkout" [disabled]="isProcessing" (click)="checkout()">
+          <span *ngIf="!isProcessing">Confirmar Compra</span>
+          <span *ngIf="isProcessing">Enviando a RabbitMQ...</span>
+        </button>
+      </div>
+
+      <!-- Banner de Notificación de Evento Asíncrono Creado -->
+      <div *ngIf="lastOrderResponse" class="order-alert success">
+        <h4>¡Orden Emitida con Éxito!</h4>
+        <p><strong>N° Orden:</strong> {{ lastOrderResponse.orderNumber }}</p>
+        <p><strong>Estado BD:</strong> {{ lastOrderResponse.status }}</p>
+        <small>El evento fue publicado en RabbitMQ y las tareas asíncronas (notificación y ticket) se están procesando en segundo plano.</small>
+      </div>
+
+      <div *ngIf="errorMessage" class="order-alert error">
+        {{ errorMessage }}
+      </div>
+    </aside>
+  </main>
+</div>

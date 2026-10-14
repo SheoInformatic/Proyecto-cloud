@@ -1,0 +1,25 @@
+server:
+  port: 8082 # Puerto diferenciado para evitar colisiones
+
+spring:
+  application:
+    name: notification-ticket-service
+
+  # Conexión a RabbitMQ
+  rabbitmq:
+    host: ${RABBITMQ_HOST:localhost}
+    port: ${RABBITMQ_PORT:5672}
+    username: ${RABBITMQ_USER:guest}
+    password: ${RABBITMQ_PASSWORD:guest}
+    listener:
+      simple:
+        acknowledge-mode: manual # Exigencia clave: Confirmación manual (ACK/NACK)
+        prefetch: 1 # Procesa 1 mensaje a la vez para balanceo óptimo
+
+# Configuración centralizada de Colas
+faster360:
+  messaging:
+    queues:
+      notification: faster360.orders.notification.queue
+      ticket: faster360.orders.ticket.queue
+      dlq: faster360.orders.dlq

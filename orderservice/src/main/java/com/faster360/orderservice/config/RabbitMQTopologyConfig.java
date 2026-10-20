@@ -20,8 +20,8 @@ public class RabbitMQTopologyConfig {
 
     // 1. Exchanges
     @Bean
-    public DirectExchange orderExchange() {
-        return new DirectExchange(properties.getExchange(), true, false);
+    public TopicExchange orderExchange() {
+        return new TopicExchange(properties.getExchange(), true, false);
     }
 
     @Bean

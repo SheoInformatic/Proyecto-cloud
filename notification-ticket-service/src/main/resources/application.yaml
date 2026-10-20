@@ -14,11 +14,17 @@ spring:
     listener:
       simple:
         acknowledge-mode: manual # Exigencia clave: Confirmación manual (ACK/NACK)
+        missing-queues-fatal: false
         prefetch: 1 # Procesa 1 mensaje a la vez para balanceo óptimo
 
-# Configuración centralizada de Colas
+# Configuración centralizada de RabbitMQ para Faster 360
 faster360:
   messaging:
+    exchange: faster360.orders.exchange
+    dlx: faster360.orders.dlx
+    routing-keys:
+      order-created: order.created
+      dead-letter: order.dead-letter
     queues:
       notification: faster360.orders.notification.queue
       ticket: faster360.orders.ticket.queue

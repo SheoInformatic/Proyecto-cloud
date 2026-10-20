@@ -49,17 +49,21 @@ public class JwtTokenValidator {
             Matcher issMatcher = ISS_PATTERN.matcher(payloadJson);
             if (issMatcher.find()) {
                 String iss = issMatcher.group(1);
-                if (!iss.contains("faster360.com")) {
+                boolean isGcp = iss.contains("securetoken.google.com");
+                boolean isFaster = iss.contains("faster360.com");
+                if (!isGcp && !isFaster) {
                     log.warn("Emisor del token no confiable: {}", iss);
                     return false;
                 }
+                log.info("Emisor IDaaS reconocido: {}", isGcp ? "Google Cloud Identity Platform" : "Faster360 IDaaS Gateway");
             }
 
-            // 3. Extraer usuario (claim 'sub')
+            // 3. Extraer usuario (claim 'email' o 'sub')
+            Matcher emailMatcher = Pattern.compile("\"email\"\\s*:\\s*\"([^\"]+)\"").matcher(payloadJson);
             Matcher subMatcher = SUB_PATTERN.matcher(payloadJson);
-            String sub = subMatcher.find() ? subMatcher.group(1) : "desconocido";
+            String user = emailMatcher.find() ? emailMatcher.group(1) : (subMatcher.find() ? subMatcher.group(1) : "desconocido");
 
-            log.info("JWT validado con éxito para el usuario: {}", sub);
+            log.info("JWT IDaaS validado con éxito para el usuario: {}", user);
             return true;
 
         } catch (Exception e) {

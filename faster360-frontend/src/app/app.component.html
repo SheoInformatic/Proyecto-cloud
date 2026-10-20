@@ -1,83 +1,1375 @@
-<div class="app-container">
-  <!-- Navbar -->
-  <header class="navbar">
-    <div class="brand">
-      <span class="logo-badge">360°</span>
-      <h1>Faster 360</h1>
+<!-- FASTER 360° - Modern Cloud E-Commerce Storefront -->
+<div class="store-wrapper">
+
+  <!-- 1. ANNOUNCEMENT BAR -->
+  <aside class="announcement-bar" aria-label="Avisos y beneficios de la tienda">
+    <div class="announcement-content">
+      <div class="announcement-item">
+        <i class="fa-solid fa-bolt text-accent"></i>
+        <span><strong>ENVÍO GRATIS FLASH</strong> en compras sobre $50.000 a todo Chile</span>
+      </div>
+      <div class="announcement-item hide-mobile">
+        <i class="fa-solid fa-shield-halved text-accent"></i>
+        <span>Protección y Token IDaaS 256-Bit Activo</span>
+      </div>
+      <div class="announcement-actions">
+        <button class="btn-text-link" (click)="openCloudArchitecture()">
+          <span class="status-indicator-dot"></span>
+          <span>Arquitectura Cloud Live</span>
+        </button>
+        <span class="divider-v"></span>
+        <span class="currency-tag">CLP ($)</span>
+      </div>
+    </div>
+  </aside>
+
+  <!-- 2. MAIN HEADER & NAVBAR -->
+  <header class="main-header">
+    <div class="header-container">
+      <!-- Brand Logo -->
+      <div class="brand-logo" (click)="selectCategory('all'); clearSearch()">
+        <div class="logo-icon-wrapper">
+          <i class="fa-solid fa-cubes-stacked"></i>
+        </div>
+        <div class="logo-text">
+          <div class="logo-title">
+            <span>FASTER</span><span class="logo-accent">360°</span>
+          </div>
+          <span class="logo-tagline">CLOUD PERFORMANCE STORE</span>
+        </div>
+      </div>
+
+      <!-- Live Search Bar -->
+      <div class="search-bar-wrapper">
+        <i class="fa-solid fa-magnifying-glass search-icon"></i>
+        <input
+          type="text"
+          class="search-input"
+          placeholder="Buscar zapatillas, smartwatches, audífonos..."
+          [(ngModel)]="searchQuery"
+        />
+        <button *ngIf="searchQuery" class="clear-search-btn" (click)="clearSearch()" title="Limpiar búsqueda">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <!-- User & Cart Header Actions -->
+      <div class="header-actions">
+        <!-- Cloud Status Badge -->
+        <button class="header-btn cloud-status-btn" (click)="openCloudArchitecture()" title="Ver estado de Microservicios Cloud y RabbitMQ">
+          <i class="fa-solid fa-server"></i>
+          <span class="cloud-status-text hide-mobile">Microservicios</span>
+          <span class="online-pulse"></span>
+        </button>
+
+        <!-- Admin RabbitMQ Button -->
+        <button class="header-btn admin-queues-btn" (click)="openAdminQueuesModal()" title="Administrar Colas y Exchanges RabbitMQ (:8083)">
+          <i class="fa-solid fa-sliders"></i>
+          <span class="cloud-status-text hide-mobile">Admin RabbitMQ</span>
+        </button>
+
+        <!-- Wishlist Button -->
+        <button class="header-btn" (click)="showToast('info', 'Favoritos', 'Tienes ' + wishlist.size + ' productos en tu lista de deseos')" title="Lista de Deseos">
+          <i class="fa-regular fa-heart"></i>
+          <span *ngIf="wishlist.size > 0" class="action-badge">{{ wishlist.size }}</span>
+        </button>
+
+        <!-- User Authentication & Profile Menu -->
+        <div class="user-profile-wrapper">
+          <ng-container *ngIf="currentUser; else notLoggedIn">
+            <div class="user-logged-pill">
+              <div class="user-avatar">
+                {{ currentUser.name.charAt(0).toUpperCase() }}
+              </div>
+              <div class="user-info hide-mobile">
+                <span class="user-name">{{ currentUser.name }}</span>
+                <span class="user-role"><i class="fa-solid fa-circle-check"></i> IDaaS Conectado</span>
+              </div>
+              <div class="user-dropdown-menu">
+                <button class="dropdown-item" (click)="openOrdersHistory()">
+                  <i class="fa-solid fa-receipt"></i> Mis Pedidos
+                </button>
+                <button class="dropdown-item" (click)="openCloudArchitecture()">
+                  <i class="fa-solid fa-network-wired"></i> Token JWT
+                </button>
+                <button class="dropdown-item text-primary" (click)="renewTokenManual()" [disabled]="isRenewingToken">
+                  <i class="fa-solid fa-arrows-rotate" [class.fa-spin]="isRenewingToken"></i> Renovar Token
+                </button>
+                <button class="dropdown-item" (click)="quickSwitchUser()">
+                  <i class="fa-solid fa-user-gear"></i> Cambiar de Usuario
+                </button>
+                <hr class="dropdown-divider" />
+                <button class="dropdown-item text-danger" (click)="logout()">
+                  <i class="fa-solid fa-arrow-right-from-bracket"></i> Cerrar Sesión
+                </button>
+              </div>
+            </div>
+          </ng-container>
+
+          <ng-template #notLoggedIn>
+            <button class="btn-idaas-login" (click)="openAuthModal()">
+              <i class="fa-solid fa-fingerprint"></i>
+              <span>Acceder IDaaS</span>
+            </button>
+          </ng-template>
+        </div>
+
+        <!-- Cart Button -->
+        <button class="header-cart-btn" (click)="openCart()" title="Ver Carrito de Compras">
+          <div class="cart-icon-container">
+            <i class="fa-solid fa-bag-shopping"></i>
+            <span *ngIf="totalItemsCount > 0" class="cart-badge-bounce">{{ totalItemsCount }}</span>
+          </div>
+          <div class="cart-btn-info hide-mobile">
+            <span class="cart-label">Carrito</span>
+            <span class="cart-total-preview">${{ totalCart | number:'1.0-0' }}</span>
+          </div>
+        </button>
+      </div>
     </div>
 
-    <div class="user-actions">
-      <div *ngIf="currentUser; else loginBtn" class="user-badge">
-        <span class="dot-online"></span>
-        <span>{{ currentUser.name }} ({{ currentUser.email }})</span>
-        <button class="btn-secondary" (click)="logout()">Cerrar Sesión</button>
+    <!-- Category Navigation Sub-bar -->
+    <nav class="category-subnav" aria-label="Categorías de productos">
+      <div class="subnav-container">
+        <div class="category-pills">
+          <button
+            class="pill-btn"
+            [class.active]="selectedCategory === 'all'"
+            (click)="selectCategory('all')"
+          >
+            <i class="fa-solid fa-border-all"></i>
+            <span>Todos los Productos</span>
+            <span class="pill-count">({{ products.length }})</span>
+          </button>
+
+          <button
+            class="pill-btn"
+            [class.active]="selectedCategory === 'Calzado'"
+            (click)="selectCategory('Calzado')"
+          >
+            <i class="fa-solid fa-shoe-prints"></i>
+            <span>Calzado & Sneakers</span>
+          </button>
+
+          <button
+            class="pill-btn"
+            [class.active]="selectedCategory === 'Tecnología'"
+            (click)="selectCategory('Tecnología')"
+          >
+            <i class="fa-solid fa-microchip"></i>
+            <span>Smart Tech & Wearables</span>
+          </button>
+
+          <button
+            class="pill-btn"
+            [class.active]="selectedCategory === 'Audio'"
+            (click)="selectCategory('Audio')"
+          >
+            <i class="fa-solid fa-headphones"></i>
+            <span>Audio Pro 360°</span>
+          </button>
+
+          <button
+            class="pill-btn"
+            [class.active]="selectedCategory === 'Accesorios'"
+            (click)="selectCategory('Accesorios')"
+          >
+            <i class="fa-solid fa-shield-cat"></i>
+            <span>Mochilas & Accesorios</span>
+          </button>
+        </div>
+
+        <!-- Sort Filter -->
+        <div class="sort-wrapper">
+          <span class="sort-label"><i class="fa-solid fa-arrow-down-wide-short"></i> Ordenar:</span>
+          <select class="sort-select" [(ngModel)]="sortBy">
+            <option value="featured">Destacados</option>
+            <option value="price-asc">Precio: Menor a Mayor</option>
+            <option value="price-desc">Precio: Mayor a Menor</option>
+            <option value="rating">Mejor Calificados</option>
+          </select>
+        </div>
       </div>
-      <ng-template #loginBtn>
-        <button class="btn-primary" (click)="loginDemo()">Iniciar Sesión (IDaaS)</button>
-      </ng-template>
-    </div>
+    </nav>
   </header>
 
-  <!-- Contenido Principal -->
-  <main class="main-layout">
-    <!-- Catálogo de Productos -->
-    <section class="catalog-section">
-      <h2>Catálogo Destacado</h2>
-      <div class="grid-cards">
-        <div class="card" *ngFor="let item of products">
-          <img [src]="item.image" [alt]="item.name" class="card-img" />
-          <div class="card-body">
-            <span class="tag">{{ item.category }}</span>
-            <h3>{{ item.name }}</h3>
-            <p>{{ item.description }}</p>
-            <div class="card-footer">
-              <span class="price">${{ item.price | number:'1.0-0' }}</span>
-              <button class="btn-add" (click)="addToCart(item)">Agregar al Carro</button>
+  <!-- 3. HERO BANNER SECTION -->
+  <section class="hero-section" *ngIf="selectedCategory === 'all' && !searchQuery">
+    <div class="hero-backdrop"></div>
+    <div class="hero-container">
+      <div class="hero-content">
+        <div class="hero-tag">
+          <i class="fa-solid fa-fire"></i> COLECCIÓN 2026 • SMART PERFORMANCE
+        </div>
+        <h1 class="hero-title">
+          Tecnología y Estilo que <br />
+          <span class="hero-highlight">Aceleran tu Ritmo.</span>
+        </h1>
+        <p class="hero-subtitle">
+          Equipamiento de alto rendimiento, audio espacial 360° y wearables conectados con arquitectura Cloud nativa, persistencia en Cloud SQL y mensajería en tiempo real.
+        </p>
+        <div class="hero-actions">
+          <button class="btn-hero-primary" (click)="selectCategory('Calzado')">
+            <span>Explorar Sneakers</span>
+            <i class="fa-solid fa-arrow-right"></i>
+          </button>
+          <button class="btn-hero-secondary" (click)="openCloudArchitecture()">
+            <i class="fa-solid fa-diagram-project"></i>
+            <span>Ver Arquitectura Cloud</span>
+          </button>
+        </div>
+
+        <!-- Quick Value Props -->
+        <div class="hero-props-row">
+          <div class="prop-item">
+            <i class="fa-solid fa-truck-fast"></i>
+            <div>
+              <strong>Despacho Express</strong>
+              <small>Entrega 24/48 hrs hábiles</small>
+            </div>
+          </div>
+          <div class="prop-item">
+            <i class="fa-solid fa-credit-card"></i>
+            <div>
+              <strong>Hasta 6 Cuotas</strong>
+              <small>Sin interés en todo el sitio</small>
+            </div>
+          </div>
+          <div class="prop-item">
+            <i class="fa-solid fa-shield-heart"></i>
+            <div>
+              <strong>Garantía Oficial</strong>
+              <small>12 meses de cobertura</small>
             </div>
           </div>
         </div>
       </div>
-    </section>
 
-    <!-- Barra Lateral: Carrito y Checkout -->
-    <aside class="cart-sidebar">
-      <h2>Tu Pedido</h2>
+      <!-- Hero Visual Showcase -->
+      <div class="hero-visual">
+        <div class="hero-card-floating main-product-float">
+          <div class="floating-badge">DESTACADO DEL MES</div>
+          <img src="https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=800&auto=format&fit=crop&q=80" alt="Faster Runner X-Pro" class="float-img" />
+          <div class="float-details">
+            <h4>Sneakers Faster Runner X-Pro</h4>
+            <div class="float-pricing">
+              <span class="price-val">$89.990</span>
+              <span class="price-old">$119.990</span>
+              <span class="discount-pill">-25%</span>
+            </div>
+            <button class="btn-float-add" (click)="addToCart(products[0])">
+              <i class="fa-solid fa-cart-plus"></i> Agregar
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
 
-      <div *ngIf="cart.length === 0" class="empty-cart">
-        <p>No tienes productos en el carro.</p>
+  <!-- 4. ACTIVE FILTERS NOTIFICATION -->
+  <div class="filters-status-bar" *ngIf="selectedCategory !== 'all' || searchQuery">
+    <div class="filters-container">
+      <div class="active-chips">
+        <span class="filter-results-text">
+          Mostrando <strong>{{ filteredProducts.length }}</strong> productos:
+        </span>
+        <span *ngIf="selectedCategory !== 'all'" class="filter-chip">
+          Categoría: {{ selectedCategory }}
+          <i class="fa-solid fa-xmark" (click)="selectCategory('all')"></i>
+        </span>
+        <span *ngIf="searchQuery" class="filter-chip">
+          Búsqueda: "{{ searchQuery }}"
+          <i class="fa-solid fa-xmark" (click)="clearSearch()"></i>
+        </span>
+      </div>
+      <button class="btn-clear-all" (click)="selectCategory('all'); clearSearch()">
+        Restablecer filtros
+      </button>
+    </div>
+  </div>
+
+  <!-- 5. PRODUCTS CATALOG GRID -->
+  <main class="catalog-main">
+    <div class="catalog-container">
+      <div class="section-header">
+        <div>
+          <h2 class="section-title">
+            {{ selectedCategory === 'all' ? 'Catálogo Destacado Faster 360°' : selectedCategory }}
+          </h2>
+          <p class="section-desc">
+            Productos diseñados con materiales de grado profesional y optimizados para alto rendimiento.
+          </p>
+        </div>
       </div>
 
-      <div *ngIf="cart.length > 0" class="cart-items">
-        <div class="cart-row" *ngFor="let c of cart; let idx = index">
-          <div>
-            <strong>{{ c.product.name }}</strong>
-            <div class="cart-qty">Cant: {{ c.quantity }} x ${{ c.product.price | number:'1.0-0' }}</div>
-          </div>
-          <button class="btn-del" (click)="removeFromCart(idx)">&times;</button>
+      <!-- Empty Results State -->
+      <div *ngIf="filteredProducts.length === 0" class="empty-results-state">
+        <div class="empty-icon-box">
+          <i class="fa-solid fa-magnifying-glass"></i>
         </div>
-
-        <div class="cart-total">
-          <span>Total a Pagar:</span>
-          <strong>${{ totalCart | number:'1.0-0' }}</strong>
-        </div>
-
-        <button class="btn-checkout" [disabled]="isProcessing" (click)="checkout()">
-          <span *ngIf="!isProcessing">Confirmar Compra</span>
-          <span *ngIf="isProcessing">Enviando a RabbitMQ...</span>
+        <h3>No encontramos productos que coincidan</h3>
+        <p>Intenta con otros términos de búsqueda o selecciona otra categoría.</p>
+        <button class="btn-reset-filters" (click)="selectCategory('all'); clearSearch()">
+          Ver todos los productos
         </button>
       </div>
 
-      <!-- Banner de Notificación de Evento Asíncrono Creado -->
-      <div *ngIf="lastOrderResponse" class="order-alert success">
-        <h4>¡Orden Emitida con Éxito!</h4>
-        <p><strong>N° Orden:</strong> {{ lastOrderResponse.orderNumber }}</p>
-        <p><strong>Estado BD:</strong> {{ lastOrderResponse.status }}</p>
-        <small>El evento fue publicado en RabbitMQ y las tareas asíncronas (notificación y ticket) se están procesando en segundo plano.</small>
+      <!-- Grid Cards -->
+      <div class="products-grid" *ngIf="filteredProducts.length > 0">
+        <article class="product-card" *ngFor="let product of filteredProducts">
+          <!-- Card Badges -->
+          <div class="card-badges-container">
+            <span *ngIf="product.badge" class="badge-pill" [ngClass]="{
+              'badge-sale': product.badgeType === 'sale',
+              'badge-new': product.badgeType === 'new',
+              'badge-hot': product.badgeType === 'hot',
+              'badge-trending': product.badgeType === 'trending'
+            }">
+              {{ product.badge }}
+            </span>
+          </div>
+
+          <!-- Wishlist Heart Button -->
+          <button
+            class="wishlist-btn"
+            [class.active]="isInWishlist(product.id)"
+            (click)="toggleWishlist(product, $event)"
+            title="Guardar en favoritos"
+          >
+            <i [class]="isInWishlist(product.id) ? 'fa-solid fa-heart' : 'fa-regular fa-heart'"></i>
+          </button>
+
+          <!-- Product Image Container -->
+          <div class="card-image-box" (click)="openQuickView(product)">
+            <img [src]="product.image" [alt]="product.name" class="product-img" loading="lazy" />
+            <button class="quickview-overlay-btn" (click)="openQuickView(product, $event)">
+              <i class="fa-solid fa-eye"></i> Vista Rápida
+            </button>
+          </div>
+
+          <!-- Card Content Body -->
+          <div class="card-content">
+            <div class="card-meta">
+              <span class="category-name">{{ product.category }}</span>
+              <div class="rating-box" *ngIf="product.rating">
+                <i class="fa-solid fa-star star-filled"></i>
+                <span class="rating-val">{{ product.rating }}</span>
+                <span class="rating-count">({{ product.reviewsCount }})</span>
+              </div>
+            </div>
+
+            <h3 class="product-title" (click)="openQuickView(product)">
+              {{ product.name }}
+            </h3>
+
+            <p class="product-description">
+              {{ product.description }}
+            </p>
+
+            <!-- Features Tags -->
+            <div class="product-features-row" *ngIf="product.features && product.features.length > 0">
+              <span class="feature-tag" *ngFor="let feat of product.features.slice(0, 2)">
+                <i class="fa-solid fa-check"></i> {{ feat }}
+              </span>
+            </div>
+
+            <!-- Price and Cart Button Footer -->
+            <div class="card-footer-box">
+              <div class="pricing-block">
+                <div class="current-price-row">
+                  <span class="main-price">${{ product.price | number:'1.0-0' }}</span>
+                  <span *ngIf="product.originalPrice" class="original-price">
+                    ${{ product.originalPrice | number:'1.0-0' }}
+                  </span>
+                </div>
+                <div class="installments-hint">
+                  Hasta 6 cuotas de ${{ (product.price / 6) | number:'1.0-0' }}
+                </div>
+              </div>
+
+              <button class="btn-add-cart" (click)="addToCart(product, undefined, undefined, 1, $event)">
+                <i class="fa-solid fa-cart-shopping"></i>
+                <span>Agregar</span>
+              </button>
+            </div>
+
+            <!-- Stock status pill -->
+            <div class="stock-status-row">
+              <span *ngIf="(product.stock || 10) <= 5" class="stock-alert-low">
+                <i class="fa-solid fa-triangle-exclamation"></i> ¡Solo quedan {{ product.stock }} unidades!
+              </span>
+              <span *ngIf="(product.stock || 10) > 5" class="stock-alert-ok">
+                <i class="fa-solid fa-circle-check"></i> En Stock Disponible
+              </span>
+            </div>
+          </div>
+        </article>
+      </div>
+    </div>
+  </main>
+
+  <!-- 6. SLIDE-OVER SHOPPING CART DRAWER -->
+  <div class="cart-drawer-backdrop" *ngIf="isCartOpen" (click)="closeCart()"></div>
+  <aside class="cart-drawer" [class.open]="isCartOpen" aria-label="Carrito de compras">
+    <!-- Drawer Header -->
+    <div class="drawer-header">
+      <div class="drawer-header-left">
+        <i class="fa-solid fa-bag-shopping drawer-icon"></i>
+        <h3>Tu Carrito</h3>
+        <span class="item-count-pill">{{ totalItemsCount }} productos</span>
+      </div>
+      <button class="btn-drawer-close" (click)="closeCart()" title="Cerrar Carrito">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+    </div>
+
+    <!-- Free Shipping Progress Bar -->
+    <div class="free-shipping-container">
+      <div class="free-shipping-text">
+        <span *ngIf="freeShippingRemaining > 0">
+          ¡Agrega <strong>${{ freeShippingRemaining | number:'1.0-0' }}</strong> más para <strong>ENVÍO GRATIS</strong>!
+        </span>
+        <span *ngIf="freeShippingRemaining === 0" class="shipping-free-active">
+          🎉 ¡Felicidades! Tienes <strong>ENVÍO GRATIS</strong> en este pedido.
+        </span>
+      </div>
+      <div class="progress-track">
+        <div class="progress-bar-fill" [style.width.%]="freeShippingProgress"></div>
+      </div>
+    </div>
+
+    <!-- Drawer Body -->
+    <div class="drawer-body">
+      <!-- Empty Cart Message -->
+      <div *ngIf="cart.length === 0" class="empty-cart-view">
+        <div class="empty-cart-icon">
+          <i class="fa-solid fa-cart-flatbed"></i>
+        </div>
+        <h4>Tu carrito está vacío</h4>
+        <p>Parece que aún no has agregado productos a tu orden.</p>
+        <button class="btn-start-shopping" (click)="closeCart(); selectCategory('all')">
+          Explorar Productos
+        </button>
       </div>
 
-      <div *ngIf="errorMessage" class="order-alert error">
-        {{ errorMessage }}
+      <!-- Cart Items List -->
+      <div *ngIf="cart.length > 0" class="cart-items-list">
+        <div class="cart-item-row" *ngFor="let item of cart; let idx = index">
+          <img [src]="item.product.image" [alt]="item.product.name" class="cart-thumb" />
+
+          <div class="cart-item-info">
+            <span class="cart-item-category">{{ item.product.category }}</span>
+            <h4 class="cart-item-name">{{ item.product.name }}</h4>
+
+            <div class="cart-item-variants" *ngIf="item.selectedColor || item.selectedSize">
+              <span *ngIf="item.selectedColor" class="variant-tag">Color: {{ item.selectedColor }}</span>
+              <span *ngIf="item.selectedSize" class="variant-tag">Talla: {{ item.selectedSize }}</span>
+            </div>
+
+            <div class="cart-item-price-row">
+              <span class="cart-unit-price">${{ item.product.price | number:'1.0-0' }} c/u</span>
+              <strong class="cart-line-total">${{ (item.product.price * item.quantity) | number:'1.0-0' }}</strong>
+            </div>
+
+            <!-- Stepper Controls -->
+            <div class="stepper-and-delete">
+              <div class="qty-stepper">
+                <button class="stepper-btn" (click)="updateCartQty(idx, -1)" [disabled]="item.quantity <= 1">
+                  <i class="fa-solid fa-minus"></i>
+                </button>
+                <span class="stepper-value">{{ item.quantity }}</span>
+                <button class="stepper-btn" (click)="updateCartQty(idx, 1)">
+                  <i class="fa-solid fa-plus"></i>
+                </button>
+              </div>
+
+              <button class="btn-remove-item" (click)="removeFromCart(idx)" title="Eliminar del carrito">
+                <i class="fa-regular fa-trash-can"></i>
+              </button>
+            </div>
+          </div>
+        </div>
       </div>
-    </aside>
-  </main>
+    </div>
+
+    <!-- Drawer Footer (Order Summary & Checkout) -->
+    <div class="drawer-footer" *ngIf="cart.length > 0">
+      <!-- Coupon Code Box -->
+      <div class="coupon-section">
+        <div class="coupon-input-group" *ngIf="!appliedCoupon">
+          <input
+            type="text"
+            class="coupon-input"
+            placeholder="Código de descuento (ej: FASTER10)"
+            [(ngModel)]="couponInput"
+            (keyup.enter)="applyCoupon()"
+          />
+          <button class="btn-apply-coupon" (click)="applyCoupon()">Aplicar</button>
+        </div>
+        <div *ngIf="appliedCoupon" class="coupon-applied-pill">
+          <div class="coupon-pill-info">
+            <i class="fa-solid fa-tag"></i>
+            <span>Cupón <strong>{{ appliedCoupon.code }}</strong> (-{{ appliedCoupon.discountType === 'percentage' ? appliedCoupon.discountValue + '%' : '$' + (appliedCoupon.discountValue | number:'1.0-0') }})</span>
+          </div>
+          <button class="btn-remove-coupon" (click)="removeCoupon()">&times;</button>
+        </div>
+        <small *ngIf="couponError" class="coupon-error-msg">{{ couponError }}</small>
+      </div>
+
+      <!-- Financial Totals -->
+      <div class="totals-breakdown">
+        <div class="total-row">
+          <span>Subtotal</span>
+          <span>${{ subtotalCart | number:'1.0-0' }}</span>
+        </div>
+
+        <div class="total-row discount-row" *ngIf="appliedCoupon">
+          <span>Descuento Cupón</span>
+          <span>-${{ discountAmount | number:'1.0-0' }}</span>
+        </div>
+
+        <div class="total-row">
+          <span>Despacho</span>
+          <span *ngIf="shippingCost === 0" class="shipping-free-tag">¡GRATIS!</span>
+          <span *ngIf="shippingCost > 0">${{ shippingCost | number:'1.0-0' }}</span>
+        </div>
+
+        <div class="total-row grand-total">
+          <div>
+            <strong>Total a Pagar</strong>
+            <small class="tax-hint">IVA incluido</small>
+          </div>
+          <strong class="total-amount-display">${{ totalCart | number:'1.0-0' }}</strong>
+        </div>
+      </div>
+
+      <!-- Checkout Button -->
+      <button class="btn-checkout-primary" (click)="startCheckout()">
+        <i class="fa-solid fa-lock"></i>
+        <span>Iniciar Pago Seguro</span>
+        <i class="fa-solid fa-arrow-right"></i>
+      </button>
+
+      <div class="security-guarantee-row">
+        <span><i class="fa-solid fa-shield-check"></i> Pago 100% Protegido</span>
+        <span><i class="fa-solid fa-rotate-left"></i> Devolución 30 Días</span>
+      </div>
+    </div>
+  </aside>
+
+  <!-- 7. MODAL: VISTA RÁPIDA / QUICK VIEW -->
+  <div class="modal-backdrop" *ngIf="isQuickViewOpen && selectedProduct" (click)="closeQuickView()">
+    <div class="quickview-modal-card" (click)="$event.stopPropagation()">
+      <button class="modal-close-btn" (click)="closeQuickView()">&times;</button>
+
+      <div class="quickview-layout">
+        <div class="quickview-gallery">
+          <img [src]="selectedProduct.image" [alt]="selectedProduct.name" class="qv-main-image" />
+          <div class="qv-badge" *ngIf="selectedProduct.badge">{{ selectedProduct.badge }}</div>
+        </div>
+
+        <div class="quickview-details">
+          <span class="qv-category">{{ selectedProduct.category }}</span>
+          <h2 class="qv-title">{{ selectedProduct.name }}</h2>
+
+          <div class="qv-ratings-row" *ngIf="selectedProduct.rating">
+            <div class="stars-gold">
+              <i class="fa-solid fa-star"></i>
+              <i class="fa-solid fa-star"></i>
+              <i class="fa-solid fa-star"></i>
+              <i class="fa-solid fa-star"></i>
+              <i class="fa-solid fa-star"></i>
+            </div>
+            <span class="qv-rating-num">{{ selectedProduct.rating }}</span>
+            <span class="qv-reviews-count">({{ selectedProduct.reviewsCount }} opiniones verificadas)</span>
+          </div>
+
+          <div class="qv-price-box">
+            <span class="qv-current-price">${{ selectedProduct.price | number:'1.0-0' }}</span>
+            <span *ngIf="selectedProduct.originalPrice" class="qv-old-price">${{ selectedProduct.originalPrice | number:'1.0-0' }}</span>
+          </div>
+
+          <p class="qv-description">{{ selectedProduct.description }}</p>
+
+          <!-- Specifications list -->
+          <div class="qv-specs" *ngIf="selectedProduct.features">
+            <h4>Características Principales:</h4>
+            <ul>
+              <li *ngFor="let feat of selectedProduct.features">
+                <i class="fa-solid fa-circle-check text-success"></i> {{ feat }}
+              </li>
+            </ul>
+          </div>
+
+          <!-- Color options if available -->
+          <div class="qv-option-group" *ngIf="selectedProduct.colors && selectedProduct.colors.length > 0">
+            <label>Color: <strong>{{ quickViewSelectedColor }}</strong></label>
+            <div class="color-chips-row">
+              <button
+                *ngFor="let c of selectedProduct.colors"
+                class="color-chip"
+                [class.selected]="quickViewSelectedColor === c.name"
+                (click)="quickViewSelectedColor = c.name"
+                [title]="c.name"
+              >
+                <span class="color-dot" [style.backgroundColor]="c.hex"></span>
+                <span>{{ c.name }}</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Sizes if available -->
+          <div class="qv-option-group" *ngIf="selectedProduct.sizes && selectedProduct.sizes.length > 0">
+            <label>Talla: <strong>{{ quickViewSelectedSize }}</strong></label>
+            <div class="sizes-chips-row">
+              <button
+                *ngFor="let s of selectedProduct.sizes"
+                class="size-chip"
+                [class.selected]="quickViewSelectedSize === s"
+                (click)="quickViewSelectedSize = s"
+              >
+                {{ s }}
+              </button>
+            </div>
+          </div>
+
+          <!-- Quantity and Add to Cart -->
+          <div class="qv-actions-row">
+            <div class="qty-stepper-large">
+              <button class="stepper-btn" (click)="quickViewQty = quickViewQty > 1 ? quickViewQty - 1 : 1">
+                <i class="fa-solid fa-minus"></i>
+              </button>
+              <span class="stepper-value">{{ quickViewQty }}</span>
+              <button class="stepper-btn" (click)="quickViewQty = quickViewQty + 1">
+                <i class="fa-solid fa-plus"></i>
+              </button>
+            </div>
+
+            <button class="btn-qv-add-cart" (click)="addQuickViewToCart()">
+              <i class="fa-solid fa-bag-shopping"></i>
+              <span>Agregar al Carrito</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 8. MODAL: AUTENTICACIÓN IDaaS (Cloud Identity Provider) -->
+  <div class="modal-backdrop" *ngIf="isAuthModalOpen" (click)="closeAuthModal()">
+    <div class="auth-modal-card" (click)="$event.stopPropagation()">
+      <button class="modal-close-btn" (click)="closeAuthModal()">&times;</button>
+
+      <div class="auth-header">
+        <div class="idaas-icon-badge">
+          <i class="fa-solid fa-shield-halved"></i>
+        </div>
+        <h2>Faster 360° Identity Gateway</h2>
+        <p>Autenticación federada IDaaS requerida para emitir y firmar órdenes hacia los microservicios Cloud.</p>
+      </div>
+
+      <!-- Pestañas de Selección de Modo IDaaS -->
+      <div class="auth-tabs-nav">
+        <button
+          type="button"
+          class="auth-tab-btn"
+          [class.active]="authMode === 'gcp'"
+          (click)="authMode = 'gcp'"
+        >
+          <i class="fa-brands fa-google"></i>
+          <span>GCP Identity Platform</span>
+        </button>
+        <button
+          type="button"
+          class="auth-tab-btn"
+          [class.active]="authMode === 'presets'"
+          (click)="authMode = 'presets'"
+        >
+          <i class="fa-solid fa-users"></i>
+          <span>Presets Demo</span>
+        </button>
+      </div>
+
+      <!-- MODO 1: GOOGLE CLOUD IDENTITY PLATFORM (IDaaS REAL) -->
+      <div *ngIf="authMode === 'gcp'" class="gcp-auth-section">
+        <div class="gcp-badge-info">
+          <i class="fa-solid fa-cloud-bolt text-accent"></i>
+          <span>Autenticación oficial vía <code>identitytoolkit.googleapis.com</code>. Emite JWT <code>securetoken.google.com</code>.</span>
+        </div>
+
+        <!-- Selector Rápido de 2 Usuarios Predefinidos -->
+        <div class="user-presets-pills">
+          <span class="pills-label">Cargar Credenciales de Usuario (2 Usuarios):</span>
+          <div class="pills-row">
+            <button type="button" class="user-pill-btn" (click)="loadPredefinedUser('cliente')" title="Cargar Usuario 1">
+              <span class="user-pill-avatar">SG</span>
+              <div>
+                <strong>Usuario 1</strong>
+                <small>cliente&#64;faster360.com</small>
+              </div>
+            </button>
+            <button type="button" class="user-pill-btn" (click)="loadPredefinedUser('admin')" title="Cargar Usuario 2">
+              <span class="user-pill-avatar purple">CS</span>
+              <div>
+                <strong>Usuario 2</strong>
+                <small>admin&#64;faster360.com</small>
+              </div>
+            </button>
+          </div>
+        </div>
+
+        <!-- Toggle: Iniciar Sesión / Registrarse -->
+        <div class="auth-action-toggle">
+          <button
+            type="button"
+            class="auth-action-btn"
+            [class.active]="gcpAuthAction === 'login'"
+            (click)="gcpAuthAction = 'login'"
+          >
+            <i class="fa-solid fa-right-to-bracket"></i> Iniciar Sesión
+          </button>
+          <button
+            type="button"
+            class="auth-action-btn"
+            [class.active]="gcpAuthAction === 'signup'"
+            (click)="gcpAuthAction = 'signup'"
+          >
+            <i class="fa-solid fa-user-plus"></i> Registrar en GCP
+          </button>
+        </div>
+
+        <form class="auth-form" (submit)="submitGcpAuth(); $event.preventDefault()">
+          <div class="form-group">
+            <label>Web API Key de Google Cloud</label>
+            <input
+              type="text"
+              class="form-control"
+              placeholder="AIzaSy... (API Key de tu proyecto GCP)"
+              [(ngModel)]="gcpApiKey"
+              name="apiKey"
+              required
+            />
+          </div>
+
+          <div class="form-group">
+            <label>Correo Electrónico</label>
+            <input
+              type="email"
+              class="form-control"
+              placeholder="tu.usuario@ejemplo.com"
+              [(ngModel)]="gcpEmail"
+              name="gcpEmail"
+              required
+            />
+          </div>
+
+          <div class="form-group">
+            <label>Contraseña</label>
+            <input
+              type="password"
+              class="form-control"
+              placeholder="••••••••"
+              [(ngModel)]="gcpPassword"
+              name="gcpPassword"
+              required
+            />
+          </div>
+
+          <button type="submit" class="btn-auth-submit" [disabled]="isGcpLoading">
+            <i *ngIf="!isGcpLoading" class="fa-brands fa-google"></i>
+            <i *ngIf="isGcpLoading" class="fa-solid fa-spinner fa-spin"></i>
+            <span>{{ isGcpLoading ? 'Conectando con GCP...' : (gcpAuthAction === 'login' ? 'Acceder con GCP Identity Platform' : 'Crear Cuenta en GCP Identity') }}</span>
+          </button>
+        </form>
+      </div>
+
+      <!-- MODO 2: PRESETS DE DEMOSTRACIÓN (OFFLINE / EVALUACIÓN) -->
+      <div *ngIf="authMode === 'presets'" class="presets-auth-section">
+        <div class="auth-presets-section">
+          <label class="input-label">Seleccionar Perfil Pre-configurado:</label>
+          <div class="presets-grid">
+            <button class="preset-btn" (click)="loginWithPreset('cliente')">
+              <div class="preset-avatar">SG</div>
+              <div class="preset-meta">
+                <strong>Sergio Gómez</strong>
+                <small>Cliente VIP (sergio.dev&#64;faster360.com)</small>
+              </div>
+              <i class="fa-solid fa-chevron-right"></i>
+            </button>
+
+            <button class="preset-btn" (click)="loginWithPreset('arquitecto')">
+              <div class="preset-avatar bg-purple">CS</div>
+              <div class="preset-meta">
+                <strong>Camila Soto</strong>
+                <small>Cloud Architect (cloud.architect&#64;faster360.com)</small>
+              </div>
+              <i class="fa-solid fa-chevron-right"></i>
+            </button>
+          </div>
+        </div>
+
+        <div class="auth-divider">
+          <span>o credenciales personalizadas</span>
+        </div>
+
+        <form class="auth-form" (submit)="loginCustom(); $event.preventDefault()">
+          <div class="form-group">
+            <label>Nombre Completo</label>
+            <input
+              type="text"
+              class="form-control"
+              placeholder="Ej: Juan Pérez"
+              [(ngModel)]="customAuthName"
+              name="authName"
+              required
+            />
+          </div>
+
+          <div class="form-group">
+            <label>Correo Electrónico (sub)</label>
+            <input
+              type="email"
+              class="form-control"
+              placeholder="nombre@empresa.com"
+              [(ngModel)]="customAuthEmail"
+              name="authEmail"
+              required
+            />
+          </div>
+
+          <button type="submit" class="btn-auth-submit">
+            <i class="fa-solid fa-key"></i>
+            <span>Generar Token JWT e Ingresar</span>
+          </button>
+        </form>
+      </div>
+
+      <div class="auth-footer-notice">
+        <i class="fa-solid fa-lock"></i>
+        <span>El token JWT obtenido es inyectado por el interceptor HTTP en la cabecera <code>Authorization: Bearer</code> hacia <code>order-service</code>.</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- 9. MODAL: PROCESO DE CHECKOUT REAL -->
+  <div class="modal-backdrop" *ngIf="isCheckoutModalOpen" (click)="closeCheckoutModal()">
+    <div class="checkout-modal-card" (click)="$event.stopPropagation()">
+      <button class="modal-close-btn" (click)="closeCheckoutModal()" [disabled]="isProcessing">&times;</button>
+
+      <!-- Stepper Indicator -->
+      <div class="checkout-steps-indicator">
+        <div class="step-badge" [class.active]="checkoutStep >= 1" [class.completed]="checkoutStep > 1">
+          <span class="step-num">1</span>
+          <span>Despacho</span>
+        </div>
+        <div class="step-connector" [class.filled]="checkoutStep >= 2"></div>
+        <div class="step-badge" [class.active]="checkoutStep >= 2" [class.completed]="checkoutStep > 2">
+          <span class="step-num">2</span>
+          <span>Método de Pago</span>
+        </div>
+        <div class="step-connector" [class.filled]="checkoutStep >= 3"></div>
+        <div class="step-badge" [class.active]="checkoutStep === 3">
+          <span class="step-num">3</span>
+          <span>Confirmación</span>
+        </div>
+      </div>
+
+      <!-- STEP 1: Datos de Despacho -->
+      <div *ngIf="checkoutStep === 1" class="checkout-step-content">
+        <h3>Datos de Entrega y Facturación</h3>
+        <p class="step-sub">Ingresa la dirección donde despacharemos tu pedido Faster 360°.</p>
+
+        <div class="form-grid">
+          <div class="form-group">
+            <label>Nombre del Receptor</label>
+            <input type="text" class="form-control" [(ngModel)]="checkoutForm.name" />
+          </div>
+
+          <div class="form-group">
+            <label>Correo Electrónico (Notificaciones RabbitMQ)</label>
+            <input type="email" class="form-control" [(ngModel)]="checkoutForm.email" />
+          </div>
+
+          <div class="form-group full-width">
+            <label>Dirección (Calle, Número, Depto/Oficina)</label>
+            <input type="text" class="form-control" [(ngModel)]="checkoutForm.address" />
+          </div>
+
+          <div class="form-group">
+            <label>Ciudad / Región</label>
+            <input type="text" class="form-control" [(ngModel)]="checkoutForm.city" />
+          </div>
+
+          <div class="form-group">
+            <label>Teléfono de Contacto</label>
+            <input type="tel" class="form-control" [(ngModel)]="checkoutForm.phone" />
+          </div>
+        </div>
+
+        <div class="checkout-actions">
+          <button class="btn-step-back" (click)="closeCheckoutModal()">Cancelar</button>
+          <button class="btn-step-next" (click)="proceedToPayment()">
+            <span>Continuar al Pago</span>
+            <i class="fa-solid fa-arrow-right"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- STEP 2: Método de Pago -->
+      <div *ngIf="checkoutStep === 2" class="checkout-step-content">
+        <h3>Selecciona tu Medio de Pago</h3>
+        <p class="step-sub">Transacción cifrada y protegida por pasarela de pago segura.</p>
+
+        <div class="payment-methods-grid">
+          <label class="payment-option" [class.selected]="checkoutForm.paymentMethod === 'webpay'">
+            <input type="radio" name="payment" value="webpay" [(ngModel)]="checkoutForm.paymentMethod" />
+            <div class="payment-info">
+              <div class="payment-title-row">
+                <i class="fa-solid fa-credit-card text-primary"></i>
+                <strong>Webpay Plus / Tarjetas de Crédito & Débito</strong>
+              </div>
+              <p>Visa, Mastercard, Magna, Redcompra hasta 6 cuotas sin interés.</p>
+            </div>
+          </label>
+
+          <label class="payment-option" [class.selected]="checkoutForm.paymentMethod === 'transfer'">
+            <input type="radio" name="payment" value="transfer" [(ngModel)]="checkoutForm.paymentMethod" />
+            <div class="payment-info">
+              <div class="payment-title-row">
+                <i class="fa-solid fa-building-columns text-primary"></i>
+                <strong>Transferencia Electrónica Directa</strong>
+              </div>
+              <p>Confirmación inmediata mediante conciliación bancaria automatizada.</p>
+            </div>
+          </label>
+
+          <label class="payment-option" [class.selected]="checkoutForm.paymentMethod === 'mercadopago'">
+            <input type="radio" name="payment" value="mercadopago" [(ngModel)]="checkoutForm.paymentMethod" />
+            <div class="payment-info">
+              <div class="payment-title-row">
+                <i class="fa-solid fa-wallet text-primary"></i>
+                <strong>Mercado Pago / Dinero en Cuenta</strong>
+              </div>
+              <p>Paga con tu saldo disponible o tus tarjetas guardadas.</p>
+            </div>
+          </label>
+        </div>
+
+        <!-- Resumen Breve -->
+        <div class="checkout-mini-summary">
+          <div class="mini-summary-row">
+            <span>Total a facturar:</span>
+            <strong>${{ totalCart | number:'1.0-0' }} CLP</strong>
+          </div>
+          <div class="mini-summary-row">
+            <span>Cliente IDaaS:</span>
+            <span>{{ currentUser?.name }} ({{ currentUser?.email }})</span>
+          </div>
+        </div>
+
+        <!-- Error box if backend is not available -->
+        <div *ngIf="errorMessage" class="error-notice-card">
+          <i class="fa-solid fa-triangle-exclamation"></i>
+          <div>
+            <strong>Aviso de Conexión:</strong>
+            <p>{{ errorMessage }}</p>
+            <div class="fallback-actions">
+              <button class="btn-fallback-sim" (click)="simulateOrderSuccess()">
+                <i class="fa-solid fa-flask"></i> Generar Orden en Modo Simulación
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div class="checkout-actions">
+          <button class="btn-step-back" (click)="backToShipping()" [disabled]="isProcessing">Atrás</button>
+          <button class="btn-step-confirm" (click)="executeOrder()" [disabled]="isProcessing">
+            <span *ngIf="!isProcessing"><i class="fa-solid fa-lock"></i> Confirmar y Pagar ${{ totalCart | number:'1.0-0' }}</span>
+            <span *ngIf="isProcessing"><i class="fa-solid fa-spinner fa-spin"></i> {{ processingStage || 'Procesando...' }}</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 10. MODAL: CONFIRMACIÓN DE ORDEN & COMPROBANTE CLOUD -->
+  <div class="modal-backdrop" *ngIf="isOrderSuccessOpen && lastOrderResponse" (click)="closeOrderSuccessModal()">
+    <div class="success-modal-card" (click)="$event.stopPropagation()">
+      <div class="success-icon-banner">
+        <div class="success-check-bubble">
+          <i class="fa-solid fa-check"></i>
+        </div>
+        <h2>¡Orden Emitida con Éxito!</h2>
+        <p>Tu compra ha sido registrada y el evento se ha transmitido en la infraestructura Cloud.</p>
+      </div>
+
+      <!-- Recibo / Comprobante -->
+      <div class="receipt-card">
+        <div class="receipt-header">
+          <div>
+            <span class="receipt-label">Número de Orden</span>
+            <h3 class="receipt-order-no">#{{ lastOrderResponse.orderNumber }}</h3>
+          </div>
+          <span class="receipt-status-badge">
+            <i class="fa-solid fa-circle-dot"></i> {{ lastOrderResponse.status || 'CONFIRMADA' }}
+          </span>
+        </div>
+
+        <div class="receipt-details-grid">
+          <div class="receipt-item">
+            <span class="r-label">Cliente</span>
+            <strong class="r-val">{{ lastOrderResponse.customerName }}</strong>
+          </div>
+          <div class="receipt-item">
+            <span class="r-label">Email de Confirmación</span>
+            <strong class="r-val">{{ lastOrderResponse.customerEmail }}</strong>
+          </div>
+          <div class="receipt-item">
+            <span class="r-label">Monto Pagado</span>
+            <strong class="r-val text-primary">${{ lastOrderResponse.totalAmount | number:'1.0-0' }} CLP</strong>
+          </div>
+          <div class="receipt-item">
+            <span class="r-label">Fecha y Hora</span>
+            <strong class="r-val">{{ lastOrderResponse.createdAt | date:'dd/MM/yyyy HH:mm' }}</strong>
+          </div>
+        </div>
+
+        <!-- Cloud Architecture Pipeline Diagram -->
+        <div class="cloud-pipeline-box">
+          <h4><i class="fa-solid fa-cloud-arrow-up"></i> Flujo Cloud Ejecutado:</h4>
+          <div class="pipeline-flow">
+            <div class="pipe-node active">
+              <i class="fa-solid fa-desktop"></i>
+              <span>Frontend Angular</span>
+              <small>JWT IDaaS</small>
+            </div>
+            <i class="fa-solid fa-arrow-right pipe-arrow"></i>
+            <div class="pipe-node active">
+              <i class="fa-solid fa-server"></i>
+              <span>Order-Service</span>
+              <small>Spring Boot :8081</small>
+            </div>
+            <i class="fa-solid fa-arrow-right pipe-arrow"></i>
+            <div class="pipe-node active">
+              <i class="fa-solid fa-database"></i>
+              <span>PostgreSQL</span>
+              <small>GCP Cloud SQL</small>
+            </div>
+            <i class="fa-solid fa-arrow-right pipe-arrow"></i>
+            <div class="pipe-node active highlight-rabbit">
+              <i class="fa-solid fa-envelope"></i>
+              <span>RabbitMQ</span>
+              <small>faster360.orders</small>
+            </div>
+            <i class="fa-solid fa-arrow-right pipe-arrow"></i>
+            <div class="pipe-node active">
+              <i class="fa-solid fa-bell"></i>
+              <span>Ticket & Notif</span>
+              <small>Colas Asíncronas</small>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="success-actions">
+        <button class="btn-success-orders" (click)="closeOrderSuccessModal(); openOrdersHistory()">
+          <i class="fa-solid fa-receipt"></i> Ver en Mis Pedidos
+        </button>
+        <button class="btn-success-close" (click)="closeOrderSuccessModal()">
+          Seguir Comprando
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 11. MODAL: MIS PEDIDOS (HISTORIAL DIRECTO DE BD) -->
+  <div class="modal-backdrop" *ngIf="isOrdersHistoryOpen" (click)="closeOrdersHistory()">
+    <div class="orders-history-modal-card" (click)="$event.stopPropagation()">
+      <button class="modal-close-btn" (click)="closeOrdersHistory()">&times;</button>
+
+      <div class="modal-title-bar">
+        <i class="fa-solid fa-receipt text-primary"></i>
+        <div>
+          <h3>Mis Pedidos Registrados</h3>
+          <p>Consultado en tiempo real desde <code>GET /api/orders</code> (Cloud SQL).</p>
+        </div>
+      </div>
+
+      <div *ngIf="isLoadingOrders" class="loading-orders-spinner">
+        <i class="fa-solid fa-spinner fa-spin"></i>
+        <span>Consultando microservicio order-service...</span>
+      </div>
+
+      <div *ngIf="!isLoadingOrders && ordersHistory.length === 0" class="empty-orders-view">
+        <i class="fa-solid fa-box-open"></i>
+        <h4>No tienes órdenes registradas todavía</h4>
+        <p>Cuando realices una compra, aparecerá aquí con su estado y trazabilidad.</p>
+        <button class="btn-start-shopping" (click)="closeOrdersHistory()">Ir al Catálogo</button>
+      </div>
+
+      <div *ngIf="!isLoadingOrders && ordersHistory.length > 0" class="orders-table-wrapper">
+        <table class="orders-table">
+          <thead>
+            <tr>
+              <th>N° Orden</th>
+              <th>Fecha</th>
+              <th>Cliente</th>
+              <th>Total</th>
+              <th>Estado</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let ord of ordersHistory">
+              <td><strong>#{{ ord.orderNumber }}</strong></td>
+              <td>{{ ord.createdAt | date:'dd/MM/yyyy HH:mm' }}</td>
+              <td>{{ ord.customerName }} <br><small class="text-muted">{{ ord.customerEmail }}</small></td>
+              <td><strong>${{ ord.totalAmount | number:'1.0-0' }}</strong></td>
+              <td>
+                <span class="status-badge-confirmed">
+                  <i class="fa-solid fa-check"></i> {{ ord.status || 'CONFIRMED' }}
+                </span>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="orders-modal-footer">
+        <button class="btn-refresh-orders" (click)="loadOrders()">
+          <i class="fa-solid fa-rotate"></i> Actualizar
+        </button>
+        <button class="btn-step-back" (click)="closeOrdersHistory()">Cerrar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: GESTIÓN DE COLAS RABBITMQ (:8083) -->
+  <div class="modal-backdrop" *ngIf="isAdminQueuesModalOpen" (click)="closeAdminQueuesModal()">
+    <div class="admin-modal-card" (click)="$event.stopPropagation()">
+      <button class="modal-close-btn" (click)="closeAdminQueuesModal()">&times;</button>
+      <app-admin-queues></app-admin-queues>
+    </div>
+  </div>
+
+  <!-- 12. DRAWER: MONITOR DE ARQUITECTURA CLOUD & RABBITMQ -->
+  <div class="cart-drawer-backdrop" *ngIf="isCloudArchitectureOpen" (click)="closeCloudArchitecture()"></div>
+  <aside class="cloud-monitor-drawer" [class.open]="isCloudArchitectureOpen">
+    <div class="drawer-header">
+      <div class="drawer-header-left">
+        <i class="fa-solid fa-cubes-stacked drawer-icon text-accent"></i>
+        <div>
+          <h3>Arquitectura Cloud & Microservicios</h3>
+          <small class="text-muted">Estado del Sistema Faster 360°</small>
+        </div>
+      </div>
+      <button class="btn-drawer-close" (click)="closeCloudArchitecture()">&times;</button>
+    </div>
+
+    <div class="cloud-drawer-content">
+      <!-- Services Status Cards -->
+      <div class="service-status-card">
+        <div class="service-status-header">
+          <div class="service-title-box">
+            <span class="status-indicator-dot online"></span>
+            <strong>order-service</strong>
+          </div>
+          <span class="service-port-tag">Puerto :8081</span>
+        </div>
+        <p class="service-desc">API REST Spring Boot, persistencia JPA en PostgreSQL Cloud SQL y productor de eventos AMQP.</p>
+        <div class="service-meta-row">
+          <span>Endpoint: <code>POST /api/orders</code></span>
+          <span class="badge-pill badge-new">Activo</span>
+        </div>
+      </div>
+
+      <div class="service-status-card">
+        <div class="service-status-header">
+          <div class="service-title-box">
+            <span class="status-indicator-dot online"></span>
+            <strong>RabbitMQ Message Broker</strong>
+          </div>
+          <span class="service-port-tag">Puerto :5672</span>
+        </div>
+        <p class="service-desc">Topic Exchange: <code>faster360.orders.exchange</code> con colas desacopladas y Dead Letter Exchange (DLX).</p>
+        <div class="queues-list">
+          <div class="queue-item">
+            <i class="fa-solid fa-envelope"></i>
+            <span>faster360.orders.notification.queue</span>
+          </div>
+          <div class="queue-item">
+            <i class="fa-solid fa-ticket"></i>
+            <span>faster360.orders.ticket.queue</span>
+          </div>
+          <div class="queue-item dlq">
+            <i class="fa-solid fa-skull"></i>
+            <span>faster360.orders.dlq (Dead Letter Queue)</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="service-status-card">
+        <div class="service-status-header">
+          <div class="service-title-box">
+            <span class="status-indicator-dot online"></span>
+            <strong>notification-ticket-service</strong>
+          </div>
+          <span class="service-port-tag">Workers AMQP</span>
+        </div>
+        <p class="service-desc">Consumidores asíncronos que despachan correos automáticos al cliente y generan tickets en helpdesk.</p>
+      </div>
+
+      <!-- IDaaS Token Inspector -->
+      <div class="token-inspector-box">
+        <div class="inspector-header">
+          <i class="fa-solid fa-fingerprint text-primary"></i>
+          <strong>Inspector de Sesión IDaaS (JWT)</strong>
+        </div>
+
+        <div *ngIf="currentUser; else noTokenView">
+          <div class="jwt-claims-box">
+            <div class="claim-line">
+              <span class="claim-key">sub (Usuario):</span>
+              <span class="claim-val">{{ decodedToken?.sub || currentUser.email }}</span>
+            </div>
+            <div class="claim-line">
+              <span class="claim-key">Rol:</span>
+              <span class="claim-val">{{ currentUser.role || (currentUser.email.includes('admin') ? 'Admin Cloud' : 'Cliente') }}</span>
+            </div>
+            <div class="claim-line">
+              <span class="claim-key">iss (Emisor):</span>
+              <span class="claim-val text-success">{{ decodedToken?.iss || (currentUser.provider === 'gcp-identity-platform' ? 'securetoken.google.com' : 'https://idaas.faster360.com/') }}</span>
+            </div>
+            <div class="claim-line">
+              <span class="claim-key">Vigencia Token:</span>
+              <span class="claim-val text-accent">{{ tokenExpiresInMinutes }} min restantes</span>
+            </div>
+          </div>
+
+          <button class="btn-renew-token" (click)="renewTokenManual()" [disabled]="isRenewingToken">
+            <i class="fa-solid fa-arrows-rotate" [class.fa-spin]="isRenewingToken"></i>
+            <span>{{ isRenewingToken ? 'Renovando Token con Google...' : 'Renovar Token JWT Ahora' }}</span>
+          </button>
+
+          <button class="btn-switch-user-drawer" (click)="quickSwitchUser()">
+            <i class="fa-solid fa-shuffle"></i>
+            <span>Alternar al otro usuario ({{ currentUser.email.includes('cliente') || currentUser.email.includes('sergio') ? 'Usuario 2: Admin' : 'Usuario 1: Cliente' }})</span>
+          </button>
+
+          <small class="jwt-valid-note" style="margin-top: 10px; display: block;">
+            <i class="fa-solid fa-shield-check text-success"></i> Token inyectado por <code>jwtInterceptor</code>. Renovación automática activa ante respuestas 401.
+          </small>
+        </div>
+
+        <ng-template #noTokenView>
+          <p class="no-token-text">No has iniciado sesión con IDaaS. Haz clic en "Acceder IDaaS" para simular la emisión de un token con firma segura.</p>
+          <button class="btn-auth-quick" (click)="openAuthModal()">Iniciar Sesión IDaaS</button>
+        </ng-template>
+      </div>
+    </div>
+  </aside>
+
+  <!-- 13. TOAST NOTIFICATIONS CONTAINER -->
+  <div class="toasts-container">
+    <div
+      *ngFor="let toast of toasts"
+      class="toast-card"
+      [ngClass]="'toast-' + toast.type"
+    >
+      <div class="toast-icon">
+        <i *ngIf="toast.type === 'success'" class="fa-solid fa-check"></i>
+        <i *ngIf="toast.type === 'info'" class="fa-solid fa-circle-info"></i>
+        <i *ngIf="toast.type === 'warning'" class="fa-solid fa-triangle-exclamation"></i>
+        <i *ngIf="toast.type === 'error'" class="fa-solid fa-circle-xmark"></i>
+      </div>
+      <div class="toast-content">
+        <div class="toast-title">{{ toast.title }}</div>
+        <div class="toast-desc">{{ toast.message }}</div>
+      </div>
+      <button class="toast-close" (click)="dismissToast(toast.id)">&times;</button>
+    </div>
+  </div>
+
+  <!-- 14. MODERN E-COMMERCE FOOTER -->
+  <footer class="main-footer">
+    <!-- Newsletter Bar -->
+    <div class="newsletter-bar">
+      <div class="newsletter-container">
+        <div class="newsletter-text">
+          <h3>Únete al Club Faster 360°</h3>
+          <p>Suscríbete y recibe 15% de descuento en tu primera compra con el cupón <strong>BIENVENIDO</strong>.</p>
+        </div>
+        <form class="newsletter-form" (submit)="showToast('success', 'Suscripción Exitosa', '¡Gracias por suscribirte al Club Faster 360!'); $event.preventDefault()">
+          <input type="email" placeholder="Ingresa tu correo electrónico..." required />
+          <button type="submit">Suscribirme</button>
+        </form>
+      </div>
+    </div>
+
+    <!-- Links & Info -->
+    <div class="footer-links-container">
+      <div class="footer-column brand-col">
+        <div class="footer-brand">
+          <i class="fa-solid fa-cubes-stacked"></i>
+          <span>FASTER 360°</span>
+        </div>
+        <p class="brand-desc">
+          Plataforma de e-commerce de alto rendimiento construida con arquitectura Cloud basada en microservicios, mensajería asíncrona RabbitMQ, persistencia GCP Cloud SQL y autenticación federada IDaaS.
+        </p>
+        <div class="social-icons-row">
+          <a href="#" (click)="$event.preventDefault()" aria-label="Instagram"><i class="fa-brands fa-instagram"></i></a>
+          <a href="#" (click)="$event.preventDefault()" aria-label="Facebook"><i class="fa-brands fa-facebook"></i></a>
+          <a href="#" (click)="$event.preventDefault()" aria-label="TikTok"><i class="fa-brands fa-tiktok"></i></a>
+          <a href="#" (click)="$event.preventDefault()" aria-label="GitHub"><i class="fa-brands fa-github"></i></a>
+        </div>
+      </div>
+
+      <div class="footer-column">
+        <h4>Comprar</h4>
+        <ul>
+          <li><a href="#" (click)="selectCategory('Calzado'); $event.preventDefault()">Calzado & Sneakers</a></li>
+          <li><a href="#" (click)="selectCategory('Tecnología'); $event.preventDefault()">Smartwatches & Tech</a></li>
+          <li><a href="#" (click)="selectCategory('Audio'); $event.preventDefault()">Audio Hi-Res Pro</a></li>
+          <li><a href="#" (click)="selectCategory('Accesorios'); $event.preventDefault()">Mochilas & Accesorios</a></li>
+          <li><a href="#" (click)="sortBy = 'price-asc'; $event.preventDefault()">Ofertas Especiales</a></li>
+        </ul>
+      </div>
+
+      <div class="footer-column">
+        <h4>Servicio al Cliente</h4>
+        <ul>
+          <li><a href="#" (click)="openOrdersHistory(); $event.preventDefault()">Seguimiento de Pedidos</a></li>
+          <li><a href="#" (click)="showToast('info', 'Envíos', 'Despachos a todo el país en 24-48 horas.'); $event.preventDefault()">Tiempos de Despacho</a></li>
+          <li><a href="#" (click)="showToast('info', 'Devoluciones', '30 días de garantía de satisfacción total.'); $event.preventDefault()">Cambios y Devoluciones</a></li>
+          <li><a href="#" (click)="openCloudArchitecture(); $event.preventDefault()">Soporte Técnico Cloud</a></li>
+        </ul>
+      </div>
+
+      <div class="footer-column">
+        <h4>Pagos & Seguridad</h4>
+        <div class="payment-badges-grid">
+          <div class="pay-badge"><i class="fa-brands fa-cc-visa"></i> Visa</div>
+          <div class="pay-badge"><i class="fa-brands fa-cc-mastercard"></i> Mastercard</div>
+          <div class="pay-badge"><i class="fa-solid fa-credit-card"></i> Webpay Plus</div>
+          <div class="pay-badge"><i class="fa-solid fa-building-columns"></i> Transferencia</div>
+        </div>
+        <div class="security-seal">
+          <i class="fa-solid fa-shield-halved text-success"></i>
+          <span>Transacciones Cifradas SSL 256-Bit</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Bottom Copyright -->
+    <div class="footer-bottom">
+      <div class="footer-bottom-container">
+        <span>© 2026 Faster 360° Inc. Todos los derechos reservados. Proyecto Cloud & Microservicios.</span>
+        <div class="bottom-links">
+          <a href="#" (click)="$event.preventDefault()">Términos de Servicio</a>
+          <a href="#" (click)="$event.preventDefault()">Privacidad</a>
+          <a href="#" (click)="openCloudArchitecture(); $event.preventDefault()">Monitor de Sistema</a>
+        </div>
+      </div>
+    </div>
+  </footer>
+
 </div>

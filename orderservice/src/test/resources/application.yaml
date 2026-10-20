@@ -1,0 +1,22 @@
+spring:
+  datasource:
+    url: jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1;MODE=PostgreSQL
+    driver-class-name: org.h2.Driver
+    username: sa
+    password:
+  jpa:
+    database-platform: org.hibernate.dialect.H2Dialect
+    hibernate:
+      ddl-auto: create-drop
+
+faster360:
+  messaging:
+    exchange: faster360.orders.exchange
+    dlx: faster360.orders.dlx
+    routing-keys:
+      order-created: order.created
+      dead-letter: order.dead-letter
+    queues:
+      notification: faster360.orders.notification.queue
+      ticket: faster360.orders.ticket.queue
+      dlq: faster360.orders.dlq

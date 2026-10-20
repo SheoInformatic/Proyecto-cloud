@@ -1,0 +1,155 @@
+<div class="admin-container">
+  <div class="admin-header">
+    <div class="badge-cluster">
+      <span class="pulse-dot"></span>
+      <span>RabbitMQ Control Plane</span>
+      <span class="port-tag">Puerto :8083</span>
+    </div>
+    <h1>Administración de Mensajería Asíncrona</h1>
+    <p class="subtitle">
+      Controla dinámicamente Colas, Exchanges y Bindings en tiempo real a través del microservicio <code>rabbit-admin-service</code>.
+    </p>
+  </div>
+
+  <div class="admin-grid">
+    <!-- 1. GESTIÓN DE COLAS -->
+    <div class="admin-card">
+      <div class="card-header">
+        <i class="fa-solid fa-layer-group icon-gradient"></i>
+        <h3>Gestor de Colas (Queues)</h3>
+      </div>
+      <p class="card-desc">Crea o elimina colas durables, temporales o exclusivas en el broker.</p>
+
+      <form (ngSubmit)="submitCreateQueue()" class="form-section">
+        <div class="form-group">
+          <label>Nombre de la Cola</label>
+          <input type="text" [(ngModel)]="queueForm.name" name="queueName" placeholder="ej. faster360.orders.audit" required class="input-field" />
+        </div>
+        <div class="checkbox-group">
+          <label class="checkbox-label">
+            <input type="checkbox" [(ngModel)]="queueForm.durable" name="durable" />
+            <span>Durable</span>
+          </label>
+          <label class="checkbox-label">
+            <input type="checkbox" [(ngModel)]="queueForm.autoDelete" name="autoDelete" />
+            <span>Auto-Delete</span>
+          </label>
+        </div>
+        <button type="submit" [disabled]="isLoading" class="btn-action primary">
+          <i class="fa-solid fa-plus"></i> Crear Cola
+        </button>
+      </form>
+
+      <div class="separator"></div>
+
+      <div class="form-group">
+        <label>Eliminar Cola por Nombre</label>
+        <div class="inline-action">
+          <input type="text" [(ngModel)]="deleteQueueName" placeholder="Nombre exacto" class="input-field" />
+          <button (click)="submitDeleteQueue()" [disabled]="isLoading" class="btn-action danger">
+            <i class="fa-solid fa-trash-can"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 2. GESTIÓN DE EXCHANGES -->
+    <div class="admin-card">
+      <div class="card-header">
+        <i class="fa-solid fa-diagram-project icon-gradient"></i>
+        <h3>Gestor de Exchanges</h3>
+      </div>
+      <p class="card-desc">Registra nuevos distribuidores de mensajes para enrutamiento avanzado.</p>
+
+      <form (ngSubmit)="submitCreateExchange()" class="form-section">
+        <div class="form-group">
+          <label>Nombre del Exchange</label>
+          <input type="text" [(ngModel)]="exchangeForm.name" name="exchangeName" placeholder="ej. faster360.events.exchange" required class="input-field" />
+        </div>
+        <div class="form-group">
+          <label>Tipo de Exchange</label>
+          <select [(ngModel)]="exchangeForm.type" name="exchangeType" class="input-field select-field">
+            <option value="topic">Topic (Patrones clave)</option>
+            <option value="direct">Direct (Enrutamiento directo)</option>
+            <option value="fanout">Fanout (Broadcast a todas)</option>
+            <option value="headers">Headers (Atributos)</option>
+          </select>
+        </div>
+        <div class="checkbox-group">
+          <label class="checkbox-label">
+            <input type="checkbox" [(ngModel)]="exchangeForm.durable" name="exchangeDurable" />
+            <span>Durable</span>
+          </label>
+        </div>
+        <button type="submit" [disabled]="isLoading" class="btn-action primary">
+          <i class="fa-solid fa-network-wired"></i> Crear Exchange
+        </button>
+      </form>
+
+      <div class="separator"></div>
+
+      <div class="form-group">
+        <label>Eliminar Exchange</label>
+        <div class="inline-action">
+          <input type="text" [(ngModel)]="deleteExchangeName" placeholder="Nombre exacto" class="input-field" />
+          <button (click)="submitDeleteExchange()" [disabled]="isLoading" class="btn-action danger">
+            <i class="fa-solid fa-trash-can"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 3. GESTIÓN DE BINDINGS -->
+    <div class="admin-card">
+      <div class="card-header">
+        <i class="fa-solid fa-link icon-gradient"></i>
+        <h3>Gestor de Bindings (Enlaces)</h3>
+      </div>
+      <p class="card-desc">Asocia colas a exchanges utilizando routing keys específicas.</p>
+
+      <form (ngSubmit)="submitCreateBinding()" class="form-section">
+        <div class="form-group">
+          <label>Cola Destino</label>
+          <input type="text" [(ngModel)]="bindingForm.queueName" name="bindQueue" placeholder="ej. faster360.orders.ticket.queue" required class="input-field" />
+        </div>
+        <div class="form-group">
+          <label>Exchange Origen</label>
+          <input type="text" [(ngModel)]="bindingForm.exchangeName" name="bindExchange" placeholder="ej. faster360.orders.exchange" required class="input-field" />
+        </div>
+        <div class="form-group">
+          <label>Routing Key</label>
+          <input type="text" [(ngModel)]="bindingForm.routingKey" name="bindKey" placeholder="ej. order.* ó order.created" required class="input-field" />
+        </div>
+        <div class="dual-buttons">
+          <button type="submit" [disabled]="isLoading" class="btn-action primary">
+            <i class="fa-solid fa-link"></i> Enlazar
+          </button>
+          <button type="button" (click)="submitDeleteBinding()" [disabled]="isLoading" class="btn-action outline-danger">
+            <i class="fa-solid fa-link-slash"></i> Desenlazar
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- CONSOLA DE AUDITORÍA Y REGISTROS -->
+  <div class="console-card">
+    <div class="console-header">
+      <div class="console-title">
+        <i class="fa-solid fa-terminal"></i>
+        <span>Registro de Operaciones de Administración</span>
+      </div>
+      <span class="console-badge">{{ operationLogs.length }} eventos</span>
+    </div>
+    <div class="console-body">
+      <div *ngIf="operationLogs.length === 0" class="empty-log">
+        No se han ejecutado operaciones aún en esta sesión.
+      </div>
+      <div *ngFor="let log of operationLogs" class="log-entry" [ngClass]="log.type">
+        <span class="log-time">[{{ log.timestamp }}]</span>
+        <span class="log-tag">{{ log.type | uppercase }}</span>
+        <span class="log-msg">{{ log.message }}</span>
+      </div>
+    </div>
+  </div>
+</div>

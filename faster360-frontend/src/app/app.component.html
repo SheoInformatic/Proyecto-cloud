@@ -702,17 +702,17 @@
           <span class="pills-label">Cargar Credenciales de Usuario (2 Usuarios):</span>
           <div class="pills-row">
             <button type="button" class="user-pill-btn" (click)="loadPredefinedUser('cliente')" title="Cargar Usuario 1">
-              <span class="user-pill-avatar">SG</span>
+              <span class="user-pill-avatar">SV</span>
               <div>
-                <strong>Usuario 1</strong>
-                <small>cliente&#64;faster360.com</small>
+                <strong>Usuario 1: Sergio Velásquez</strong>
+                <small>sergio.velasquez&#64;faster360.com</small>
               </div>
             </button>
             <button type="button" class="user-pill-btn" (click)="loadPredefinedUser('admin')" title="Cargar Usuario 2">
-              <span class="user-pill-avatar purple">CS</span>
+              <span class="user-pill-avatar purple">ON</span>
               <div>
-                <strong>Usuario 2</strong>
-                <small>admin&#64;faster360.com</small>
+                <strong>Usuario 2: Omar Nieto</strong>
+                <small>omar.nieto&#64;faster360.com</small>
               </div>
             </button>
           </div>
@@ -789,19 +789,19 @@
           <label class="input-label">Seleccionar Perfil Pre-configurado:</label>
           <div class="presets-grid">
             <button class="preset-btn" (click)="loginWithPreset('cliente')">
-              <div class="preset-avatar">SG</div>
+              <div class="preset-avatar">SV</div>
               <div class="preset-meta">
-                <strong>Sergio Gómez</strong>
-                <small>Cliente VIP (sergio.dev&#64;faster360.com)</small>
+                <strong>Sergio Velásquez</strong>
+                <small>Cliente VIP (sergio.velasquez&#64;faster360.com)</small>
               </div>
               <i class="fa-solid fa-chevron-right"></i>
             </button>
 
             <button class="preset-btn" (click)="loginWithPreset('arquitecto')">
-              <div class="preset-avatar bg-purple">CS</div>
+              <div class="preset-avatar bg-purple">ON</div>
               <div class="preset-meta">
-                <strong>Camila Soto</strong>
-                <small>Cloud Architect (cloud.architect&#64;faster360.com)</small>
+                <strong>Omar Nieto</strong>
+                <small>Cloud Architect (omar.nieto&#64;faster360.com)</small>
               </div>
               <i class="fa-solid fa-chevron-right"></i>
             </button>
@@ -1252,7 +1252,7 @@
 
           <button class="btn-switch-user-drawer" (click)="quickSwitchUser()">
             <i class="fa-solid fa-shuffle"></i>
-            <span>Alternar al otro usuario ({{ currentUser.email.includes('cliente') || currentUser.email.includes('sergio') ? 'Usuario 2: Admin' : 'Usuario 1: Cliente' }})</span>
+            <span>Alternar al otro usuario ({{ currentUser.email.includes('cliente') || currentUser.email.includes('sergio') ? 'Usuario 2: Omar Nieto (Admin)' : 'Usuario 1: Sergio Velásquez (Cliente)' }})</span>
           </button>
 
           <small class="jwt-valid-note" style="margin-top: 10px; display: block;">

@@ -55,20 +55,20 @@ export class AuthService {
   public readonly PREDEFINED_USERS: PredefinedUser[] = [
     {
       id: 'cliente',
-      name: 'Sergio Gómez',
-      email: 'cliente@faster360.com',
+      name: 'Sergio Velásquez',
+      email: 'sergio.velasquez@faster360.com',
       defaultPassword: 'Password123!',
       role: 'Cliente / Comprador',
-      avatar: 'SG',
+      avatar: 'SV',
       description: 'Usuario para compras, carritos y generación de pedidos en la tienda.'
     },
     {
       id: 'admin',
-      name: 'Camila Soto',
-      email: 'admin@faster360.com',
+      name: 'Omar Nieto',
+      email: 'omar.nieto@faster360.com',
       defaultPassword: 'AdminPassword123!',
       role: 'Cloud Architect / RabbitMQ Admin',
-      avatar: 'CS',
+      avatar: 'ON',
       description: 'Usuario administrativo con permisos para topología y supervisión AMQP.'
     }
   ];
@@ -111,7 +111,7 @@ export class AuthService {
         const role = email.toLowerCase().includes('admin') ? 'Cloud Architect / RabbitMQ Admin' : 'Cliente / Comprador';
         const session: UserSession = {
           email: res.email,
-          name: res.displayName || (email.toLowerCase().includes('admin') ? 'Camila Soto' : 'Sergio Gómez'),
+          name: res.displayName || (email.toLowerCase().includes('admin') || email.toLowerCase().includes('omar') ? 'Omar Nieto' : 'Sergio Velásquez'),
           token: res.idToken,
           refreshToken: res.refreshToken,
           localId: res.localId,
@@ -142,7 +142,7 @@ export class AuthService {
         const role = email.toLowerCase().includes('admin') ? 'Cloud Architect / RabbitMQ Admin' : 'Cliente / Comprador';
         const session: UserSession = {
           email: res.email,
-          name: res.displayName || (email.toLowerCase().includes('admin') ? 'Camila Soto' : 'Sergio Gómez'),
+          name: res.displayName || (email.toLowerCase().includes('admin') || email.toLowerCase().includes('omar') ? 'Omar Nieto' : 'Sergio Velásquez'),
           token: res.idToken,
           refreshToken: res.refreshToken,
           localId: res.localId,

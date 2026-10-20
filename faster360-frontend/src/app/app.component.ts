@@ -611,11 +611,11 @@ export class AppComponent implements OnInit {
 
   loginWithPreset(preset: 'cliente' | 'arquitecto' | 'admin'): void {
     if (preset === 'cliente') {
-      this.authService.loginWithIdaaS('sergio.dev@faster360.com', 'Sergio Gómez (Cliente VIP)');
+      this.authService.loginWithIdaaS('sergio.velasquez@faster360.com', 'Sergio Velásquez (Cliente VIP)');
     } else if (preset === 'arquitecto') {
-      this.authService.loginWithIdaaS('cloud.architect@faster360.com', 'Camila Soto (Cloud Architect)');
+      this.authService.loginWithIdaaS('omar.nieto@faster360.com', 'Omar Nieto (Cloud Architect)');
     } else {
-      this.authService.loginWithIdaaS('admin.queues@faster360.com', 'RabbitMQ Admin Specialist');
+      this.authService.loginWithIdaaS('admin.queues@faster360.com', 'Omar Nieto (RabbitMQ Admin Specialist)');
     }
     this.closeAuthModal();
     this.showToast('success', 'IDaaS Autenticado', `Bienvenido(a), ${this.currentUser?.name}`);

@@ -1,4 +1,9 @@
 <!-- FASTER 360° - Modern Cloud E-Commerce Storefront -->
+<ng-container *ngIf="isPopupRoute; else storeView">
+  <router-outlet></router-outlet>
+</ng-container>
+
+<ng-template #storeView>
 <div class="store-wrapper">
 
   <!-- 1. ANNOUNCEMENT BAR -->
@@ -107,7 +112,7 @@
           </ng-container>
 
           <ng-template #notLoggedIn>
-            <button class="btn-idaas-login" (click)="openAuthModal()">
+            <button class="btn-idaas-login" (click)="openAuthPopup()">
               <i class="fa-solid fa-fingerprint"></i>
               <span>Acceder IDaaS</span>
             </button>
@@ -666,6 +671,22 @@
         </div>
         <h2>Faster 360° Identity Gateway</h2>
         <p>Autenticación federada IDaaS requerida para emitir y firmar órdenes hacia los microservicios Cloud.</p>
+      </div>
+
+      <!-- BOTÓN PARA DESPLEGAR VENTANA EMERGENTE REAL OAUTH (GMAIL / HOTMAIL) -->
+      <div class="oauth-popup-trigger-banner" style="margin-bottom: 20px; background: rgba(59, 130, 246, 0.08); border: 1px solid rgba(59, 130, 246, 0.25); border-radius: 12px; padding: 14px 16px; display: flex; align-items: center; justify-content: space-between; gap: 12px;">
+        <div style="display: flex; align-items: center; gap: 12px;">
+          <div style="width: 36px; height: 36px; border-radius: 10px; background: #2563eb; display: flex; align-items: center; justify-content: center; color: white;">
+            <i class="fa-solid fa-up-right-from-square"></i>
+          </div>
+          <div>
+            <strong style="color: #ffffff; font-size: 13px; display: block;">Ventana Emergente OAuth</strong>
+            <small style="color: #94a3b8; font-size: 11px;">Accede con tu cuenta de Gmail (Google) o Hotmail (Microsoft)</small>
+          </div>
+        </div>
+        <button type="button" class="btn-launch-popup" (click)="openAuthPopup()" style="background: linear-gradient(135deg, #3b82f6, #1d4ed8); color: white; border: none; padding: 8px 16px; border-radius: 8px; font-weight: 600; font-size: 12px; cursor: pointer; white-space: nowrap;">
+          <i class="fa-solid fa-arrow-up-right-from-square"></i> Abrir Popup
+        </button>
       </div>
 
       <!-- Pestañas de Selección de Modo IDaaS -->
@@ -1261,8 +1282,10 @@
         </div>
 
         <ng-template #noTokenView>
-          <p class="no-token-text">No has iniciado sesión con IDaaS. Haz clic en "Acceder IDaaS" para simular la emisión de un token con firma segura.</p>
-          <button class="btn-auth-quick" (click)="openAuthModal()">Iniciar Sesión IDaaS</button>
+          <p class="no-token-text">No has iniciado sesión con IDaaS. Haz clic en el botón para abrir la ventana emergente de autenticación OAuth.</p>
+          <button class="btn-auth-quick" (click)="openAuthPopup()">
+            <i class="fa-solid fa-arrow-up-right-from-square"></i> Iniciar Sesión IDaaS (Popup)
+          </button>
         </ng-template>
       </div>
     </div>
@@ -1373,3 +1396,4 @@
   </footer>
 
 </div>
+</ng-template>

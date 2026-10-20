@@ -83,7 +83,15 @@ export class AuthService {
       const saved = localStorage.getItem('faster360_session');
       if (saved) {
         try {
-          this.currentUserSubject.next(JSON.parse(saved));
+          const session = JSON.parse(saved);
+          if (session && session.name && session.name.includes('Gómez')) {
+            session.name = session.name.replace('Gómez', 'Velásquez');
+            if (session.email && session.email.includes('gomez')) {
+              session.email = session.email.replace('gomez', 'velasquez');
+            }
+            localStorage.setItem('faster360_session', JSON.stringify(session));
+          }
+          this.currentUserSubject.next(session);
         } catch (e) {
           localStorage.removeItem('faster360_session');
         }
@@ -249,7 +257,7 @@ export class AuthService {
     this.saveSession(session);
   }
 
-  private saveSession(session: UserSession): void {
+  public saveSession(session: UserSession): void {
     if (typeof window !== 'undefined' && typeof localStorage !== 'undefined') {
       localStorage.setItem('faster360_session', JSON.stringify(session));
     }

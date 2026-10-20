@@ -1,6 +1,7 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { RouterOutlet } from '@angular/router';
 import { Product } from './models/product.model';
 import { CartItem, OrderResponse, PromoCoupon, ToastMessage } from './models/order.model';
 import { AuthService, UserSession } from './core/services/auth.service';
@@ -10,11 +11,12 @@ import { AdminQueuesComponent } from './pages/admin-queues/admin-queues.componen
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [CommonModule, FormsModule, AdminQueuesComponent],
+  imports: [CommonModule, FormsModule, RouterOutlet, AdminQueuesComponent],
   templateUrl: './app.component.html',
   styleUrls: ['./app.component.css']
 })
 export class AppComponent implements OnInit {
+  isPopupRoute: boolean = false;
   currentUser: UserSession | null = null;
   isAdminQueuesModalOpen: boolean = false;
 
@@ -289,6 +291,10 @@ export class AppComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
+    if (typeof window !== 'undefined') {
+      this.isPopupRoute = window.location.pathname.includes('login-popup');
+    }
+
     this.authService.currentUser$.subscribe(user => {
       this.currentUser = user;
       if (user) {
@@ -561,7 +567,44 @@ export class AppComponent implements OnInit {
     this.openCart();
   }
 
-  // --- AUTENTICACIÓN IDaaS (GCP Identity Platform + Presets) ---
+  // --- AUTENTICACIÓN IDaaS (VENTANA EMERGENTE OAUTH + MODAL GCP) ---
+  @HostListener('window:message', ['$event'])
+  onOAuthMessage(event: MessageEvent): void {
+    if (typeof window === 'undefined') return;
+    if (event.origin !== window.location.origin) return;
+    if (event.data && event.data.type === 'FASTER360_AUTH_SUCCESS') {
+      const session = event.data.session as UserSession;
+      if (session) {
+        this.authService.saveSession(session);
+        this.currentUser = session;
+        this.checkoutForm.name = session.name;
+        this.checkoutForm.email = session.email;
+        this.closeAuthModal();
+        this.showToast('success', 'Sesión Iniciada con IDaaS', `¡Bienvenido(a), ${session.name}!`);
+      }
+    }
+  }
+
+  openAuthPopup(): void {
+    if (typeof window === 'undefined') return;
+    const width = 520;
+    const height = 720;
+    const left = Math.max(0, Math.round(window.screenX + (window.outerWidth - width) / 2));
+    const top = Math.max(0, Math.round(window.screenY + (window.outerHeight - height) / 2));
+    const popup = window.open(
+      '/login-popup',
+      'Faster360_IDaaS_Auth',
+      `width=${width},height=${height},left=${left},top=${top},status=no,toolbar=no,menubar=no,location=no,resizable=yes,scrollbars=yes`
+    );
+    if (!popup || popup.closed || typeof popup.closed === 'undefined') {
+      // Fallback si el navegador bloquea la ventana emergente
+      this.isAuthModalOpen = true;
+      this.showToast('info', 'Ventana emergente', 'Tu navegador bloqueó el popup. Puedes acceder desde aquí.');
+    } else {
+      popup.focus();
+    }
+  }
+
   openAuthModal(): void {
     this.isAuthModalOpen = true;
   }

@@ -1,7 +1,8 @@
-import { Component, OnInit, HostListener } from '@angular/core';
+import { Component, OnInit, HostListener, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterOutlet } from '@angular/router';
+import { timeout } from 'rxjs';
 import { Product } from './models/product.model';
 import { CartItem, OrderResponse, PromoCoupon, ToastMessage } from './models/order.model';
 import { AuthService, UserSession } from './core/services/auth.service';
@@ -291,7 +292,8 @@ export class AppComponent implements OnInit {
 
   constructor(
     public authService: AuthService,
-    private orderService: OrderService
+    private orderService: OrderService,
+    private cdr: ChangeDetectorRef
   ) {}
 
   ngOnInit(): void {
@@ -920,6 +922,7 @@ export class AppComponent implements OnInit {
     this.errorMessage = '';
     this.lastOrderResponse = null;
     this.processingStage = 'Validando token IDaaS y preparando payload...';
+    this.cdr.detectChanges();
 
     const payload = {
       customerName: this.checkoutForm.name || this.currentUser.name,
@@ -929,10 +932,14 @@ export class AppComponent implements OnInit {
 
     setTimeout(() => {
       this.processingStage = 'Enviando orden a Order-Service (Spring Boot :8081)...';
+      this.cdr.detectChanges();
 
-      this.orderService.createOrder(payload).subscribe({
+      this.orderService.createOrder(payload).pipe(
+        timeout(4500)
+      ).subscribe({
         next: (res) => {
           this.processingStage = '¡Publicado en RabbitMQ (faster360.orders.exchange)!';
+          this.cdr.detectChanges();
           setTimeout(() => {
             this.lastOrderResponse = res;
             this.cart = [];
@@ -942,15 +949,17 @@ export class AppComponent implements OnInit {
             this.isCheckoutModalOpen = false;
             this.isOrderSuccessOpen = true;
             this.showToast('success', '¡Compra Exitosa!', `Orden #${res.orderNumber} creada y enviada a colas RabbitMQ.`);
-          }, 800);
+            this.cdr.detectChanges();
+          }, 600);
         },
         error: (err) => {
           this.isProcessing = false;
           console.error('Error al procesar orden:', err);
-          this.errorMessage = 'No se pudo conectar con el microservicio order-service (:8081). ¿Deseas generar una orden en modo simulación Cloud para testing?';
+          this.errorMessage = 'El microservicio order-service (:8081) no responde o aún se está iniciando. Puedes usar el botón de abajo para generar la orden en Modo Simulación Cloud, o revisar la ventana de terminal OrderService.';
+          this.cdr.detectChanges();
         }
       });
-    }, 700);
+    }, 300);
   }
 
   // Generador de orden simulada en caso de que el backend local no esté levantado

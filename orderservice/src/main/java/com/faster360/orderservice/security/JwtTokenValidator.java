@@ -56,13 +56,13 @@ public class JwtTokenValidator {
             Matcher issMatcher = ISS_PATTERN.matcher(payloadJson);
             if (issMatcher.find()) {
                 String iss = issMatcher.group(1);
-                boolean isGcp = iss.contains("securetoken.google.com");
+                boolean isGcp = iss.contains("securetoken.google.com") || iss.contains("accounts.google.com");
                 boolean isFaster = iss.contains("faster360.com");
                 if (!isGcp && !isFaster) {
                     log.warn("Emisor del token no confiable: {}", iss);
                     return false;
                 }
-                log.info("Emisor IDaaS reconocido: {}", isGcp ? "Google Cloud Identity Platform" : "Faster360 IDaaS Gateway");
+                log.info("Emisor IDaaS reconocido: {}", isGcp ? "Google Cloud Identity Platform / Google OAuth" : "Faster360 IDaaS Gateway");
             }
 
             // 3. Extraer usuario (claim 'email' o 'sub') y Tenant ID (claim 'tenant_id')

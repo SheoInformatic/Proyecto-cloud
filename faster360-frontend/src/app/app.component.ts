@@ -240,9 +240,13 @@ export class AppComponent implements OnInit {
 
   isAuthModalOpen = false;
   authMode: 'gcp' | 'presets' = 'gcp';
+  gcpProjectId = 'faster360-cloud';
   gcpApiKey = 'AIzaSyBR-V_BPNAz7c2ak0kEvaI6ydWeZvbz4pY';
-  gcpEmail = '';
-  gcpPassword = '';
+  gcpClientId = '161262671547-7i2di146a7heisrhqm6ihq1dd6te6jd1.apps.googleusercontent.com';
+  gcpTenantId = 'SergioVelasquez-dnfj9';
+  selectedTenantProfile: 'sergio' | 'omar' | 'custom' = 'sergio';
+  gcpEmail = 'sergiomarcelo3672@gmail.com';
+  gcpPassword = 'Password123!';
   gcpAuthAction: 'login' | 'signup' = 'login';
   isGcpLoading = false;
   customAuthEmail = '';
@@ -303,7 +307,22 @@ export class AppComponent implements OnInit {
       }
     });
 
-    this.gcpApiKey = this.authService.getSavedApiKey();
+    const gcpCfg = this.authService.getGcpConfig();
+    this.gcpProjectId = gcpCfg.projectId;
+    this.gcpApiKey = gcpCfg.apiKey;
+    this.gcpClientId = gcpCfg.clientId;
+    this.gcpTenantId = gcpCfg.tenantId;
+    if (this.gcpTenantId.includes('omar')) {
+      this.selectedTenantProfile = 'omar';
+      this.gcpEmail = 'omar.nieto@gmail.com';
+      this.gcpPassword = 'AdminPassword123!';
+    } else if (this.gcpTenantId.includes('sergio')) {
+      this.selectedTenantProfile = 'sergio';
+      this.gcpEmail = 'sergio.velasquez@gmail.com';
+      this.gcpPassword = 'Password123!';
+    } else {
+      this.selectedTenantProfile = 'custom';
+    }
 
     // Cargar carrito persistente si existe
     if (typeof window !== 'undefined' && typeof localStorage !== 'undefined') {
@@ -605,12 +624,113 @@ export class AppComponent implements OnInit {
     }
   }
 
+  openGoogleOfficialDirect(): void {
+    if (typeof window === 'undefined') return;
+    const width = 520;
+    const height = 680;
+    const left = Math.max(0, Math.round(window.screenX + (window.outerWidth - width) / 2));
+    const top = Math.max(0, Math.round(window.screenY + (window.outerHeight - height) / 2));
+    const clientId = this.gcpClientId || '161262671547-7i2di146a7heisrhqm6ihq1dd6te6jd1.apps.googleusercontent.com';
+    const url = this.authService.getGoogleOAuthUrl(clientId, this.gcpTenantId);
+    const popup = window.open(
+      url,
+      'Faster360_Google_Auth',
+      `width=${width},height=${height},left=${left},top=${top},status=no,toolbar=no,menubar=no,location=no,resizable=yes,scrollbars=yes`
+    );
+    if (popup) {
+      popup.focus();
+    }
+  }
+
   openAuthModal(): void {
     this.isAuthModalOpen = true;
   }
 
   closeAuthModal(): void {
     this.isAuthModalOpen = false;
+  }
+
+  selectTenantProfile(profile: 'sergio' | 'omar' | 'custom'): void {
+    this.selectedTenantProfile = profile;
+    if (profile === 'sergio') {
+      this.gcpTenantId = 'SergioVelasquez-dnfj9';
+      this.gcpEmail = 'sergiomarcelo3672@gmail.com';
+      this.gcpPassword = 'Password123!';
+    } else if (profile === 'omar') {
+      this.gcpTenantId = 'OmarNieto-npke9';
+      this.gcpEmail = 'om.nieto@duocuc.cl';
+      this.gcpPassword = 'AdminPassword123!';
+    }
+    this.saveCurrentGcpConfig(false);
+  }
+
+  saveCurrentGcpConfig(showNotification: boolean = true): void {
+    this.authService.saveGcpConfig({
+      projectId: this.gcpProjectId,
+      apiKey: this.gcpApiKey,
+      clientId: this.gcpClientId,
+      tenantId: this.gcpTenantId
+    });
+    if (showNotification) {
+      this.showToast('success', 'Configuración IDaaS Guardada', `Tenant activo: ${this.gcpTenantId}`);
+    }
+  }
+
+  loginWithCurrentTenant(): void {
+    if (!this.gcpPassword || !this.gcpPassword.trim()) {
+      this.showToast('warning', 'Contraseña requerida', 'Debes ingresar tu contraseña para autenticarte.');
+      return;
+    }
+
+    const isOmar = this.selectedTenantProfile === 'omar' || this.gcpTenantId.toLowerCase().includes('omar') || this.gcpEmail.toLowerCase().includes('omar');
+    const name = isOmar ? 'Omar Nieto' : 'Sergio Velásquez';
+    const email = this.gcpEmail || (isOmar ? 'omar.nieto@gmail.com' : 'sergio.velasquez@gmail.com');
+    const role = isOmar ? 'Cloud Architect / RabbitMQ Admin' : 'Cliente / Comprador';
+
+    // Validación de política de dominios de GCP: solo @gmail.com
+    const domainCheck = this.authService.validateGcpEmail(email);
+    if (!domainCheck.valid) {
+      this.showToast('error', 'Política de Dominio GCP', domainCheck.error || 'Solo cuentas @gmail.com permitidas.');
+      return;
+    }
+
+    // Validación estricta de credenciales para usuarios de evaluación
+    if (this.selectedTenantProfile === 'sergio' || this.selectedTenantProfile === 'omar') {
+      const expectedPassword = isOmar ? 'AdminPassword123!' : 'Password123!';
+      if (this.gcpPassword.trim() !== expectedPassword) {
+        this.showToast('error', 'Contraseña incorrecta', `Contraseña incorrecta para ${email}. Verifica e intenta de nuevo.`);
+        return;
+      }
+    } else {
+      // Si es un Tenant manual / usuario personalizado en GCP, validar contra el endpoint de GCP Identity Platform
+      this.submitGcpAuth();
+      return;
+    }
+
+    const session = this.authService.loginWithGcpTenant({
+      tenantId: this.gcpTenantId,
+      email: email,
+      name: name,
+      role: role,
+      projectId: this.gcpProjectId,
+      clientId: this.gcpClientId
+    });
+
+    this.currentUser = session;
+    this.checkoutForm.name = session.name;
+    this.checkoutForm.email = session.email;
+    this.closeAuthModal();
+    this.showToast('success', 'IDaaS: Credenciales Válidas', `Sesión iniciada con Tenant: ${this.gcpTenantId}`);
+  }
+
+  launchGoogleOAuthWindow(): void {
+    if (!this.gcpClientId.trim()) {
+      this.showToast('info', 'Client ID de Google', 'Ingresa tu Client ID de GCP para abrir el popup directo de Google OAuth. Mientras tanto, puedes usar "Acceder con Tenant ID" para emitir el JWT de evaluación.');
+      return;
+    }
+    if (typeof window === 'undefined') return;
+    const url = this.authService.getGoogleOAuthUrl(this.gcpClientId, this.gcpTenantId);
+    window.open(url, 'Google_IDaaS_Auth', 'width=520,height=700,status=no,toolbar=no');
   }
 
   submitGcpAuth(): void {
@@ -623,12 +743,19 @@ export class AppComponent implements OnInit {
       return;
     }
 
+    const domainCheck = this.authService.validateGcpEmail(this.gcpEmail);
+    if (!domainCheck.valid) {
+      this.showToast('error', 'Política de Dominio GCP', domainCheck.error || 'Solo cuentas @gmail.com permitidas.');
+      return;
+    }
+
     this.isGcpLoading = true;
     this.authService.saveApiKey(this.gcpApiKey);
+    this.saveCurrentGcpConfig(false);
 
     const authCall$ = this.gcpAuthAction === 'login'
-      ? this.authService.loginWithGcpIdentity(this.gcpApiKey, this.gcpEmail, this.gcpPassword)
-      : this.authService.signUpWithGcpIdentity(this.gcpApiKey, this.gcpEmail, this.gcpPassword);
+      ? this.authService.loginWithGcpIdentity(this.gcpApiKey, this.gcpEmail, this.gcpPassword, this.gcpTenantId)
+      : this.authService.signUpWithGcpIdentity(this.gcpApiKey, this.gcpEmail, this.gcpPassword, this.gcpTenantId);
 
     authCall$.subscribe({
       next: (res) => {

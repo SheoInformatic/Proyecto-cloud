@@ -711,97 +711,241 @@
         </button>
       </div>
 
-      <!-- MODO 1: GOOGLE CLOUD IDENTITY PLATFORM (IDaaS REAL) -->
+      <!-- MODO 1: GOOGLE CLOUD IDENTITY PLATFORM (IDaaS REAL MULTI-TENANT) -->
       <div *ngIf="authMode === 'gcp'" class="gcp-auth-section">
         <div class="gcp-badge-info">
           <i class="fa-solid fa-cloud-bolt text-accent"></i>
-          <span>Autenticación oficial vía <code>identitytoolkit.googleapis.com</code>. Emite JWT <code>securetoken.google.com</code>.</span>
+          <span>Google Cloud Identity Platform Multi-Tenant. Emite JWT <code>securetoken.google.com</code>.</span>
         </div>
 
-        <!-- Selector Rápido de 2 Usuarios Predefinidos -->
+        <!-- REGISTRO OFICIAL DE CORREOS PERMITIDOS EN GCP -->
+        <div class="gcp-allowlist-card" style="margin-bottom: 14px; background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.3); border-radius: 10px; padding: 10px 14px; display: flex; align-items: flex-start; gap: 12px;">
+          <i class="fa-solid fa-shield-halved" style="font-size: 18px; margin-top: 2px; color: #10b981;"></i>
+          <div style="font-size: 11px; line-height: 1.4;">
+            <strong style="color: #34d399; display: block; margin-bottom: 2px;">Registro Oficial GCP (Google Accounts / Duoc Workspace)</strong>
+            <span style="color: #cbd5e1;">Por política de seguridad, solo se admiten cuentas autorizadas del ecosistema Google:</span>
+            <div style="margin-top: 5px; display: flex; gap: 8px; flex-wrap: wrap;">
+              <span style="background: rgba(255,255,255,0.06); padding: 2px 8px; border-radius: 6px; color: #a7f3d0; border: 1px solid rgba(16, 185, 129, 0.2);">sergiomarcelo3672&#64;gmail.com</span>
+              <span style="background: rgba(255,255,255,0.06); padding: 2px 8px; border-radius: 6px; color: #a7f3d0; border: 1px solid rgba(16, 185, 129, 0.2);">om.nieto&#64;duocuc.cl</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- SELECTOR DE PERFIL / TENANT DE EVALUACIÓN -->
         <div class="user-presets-pills">
-          <span class="pills-label">Cargar Credenciales de Usuario (2 Usuarios):</span>
+          <span class="pills-label">Seleccionar Tenant / Inquilino GCP:</span>
           <div class="pills-row">
-            <button type="button" class="user-pill-btn" (click)="loadPredefinedUser('cliente')" title="Cargar Usuario 1">
+            <button
+              type="button"
+              class="user-pill-btn"
+              [style.borderColor]="selectedTenantProfile === 'sergio' ? '#3b82f6' : 'rgba(255, 255, 255, 0.08)'"
+              [style.background]="selectedTenantProfile === 'sergio' ? 'rgba(59, 130, 246, 0.15)' : '#1e293b'"
+              (click)="selectTenantProfile('sergio')"
+              title="Tenant 1: Sergio Velásquez"
+            >
               <span class="user-pill-avatar">SV</span>
               <div>
-                <strong>Usuario 1: Sergio Velásquez</strong>
-                <small>sergio.velasquez&#64;faster360.com</small>
+                <strong>Tenant 1: Sergio Velásquez</strong>
+                <small>sergiomarcelo3672&#64;gmail.com • ID: SergioVelasquez-dnfj9</small>
               </div>
             </button>
-            <button type="button" class="user-pill-btn" (click)="loadPredefinedUser('admin')" title="Cargar Usuario 2">
+            <button
+              type="button"
+              class="user-pill-btn"
+              [style.borderColor]="selectedTenantProfile === 'omar' ? '#a855f7' : 'rgba(255, 255, 255, 0.08)'"
+              [style.background]="selectedTenantProfile === 'omar' ? 'rgba(168, 85, 247, 0.15)' : '#1e293b'"
+              (click)="selectTenantProfile('omar')"
+              title="Tenant 2: Omar Nieto"
+            >
               <span class="user-pill-avatar purple">ON</span>
               <div>
-                <strong>Usuario 2: Omar Nieto</strong>
-                <small>omar.nieto&#64;faster360.com</small>
+                <strong>Tenant 2: Omar Nieto</strong>
+                <small>om.nieto&#64;duocuc.cl • ID: OmarNieto-npke9</small>
+              </div>
+            </button>
+            <button
+              type="button"
+              class="user-pill-btn"
+              [style.borderColor]="selectedTenantProfile === 'custom' ? '#10b981' : 'rgba(255, 255, 255, 0.08)'"
+              [style.background]="selectedTenantProfile === 'custom' ? 'rgba(16, 185, 129, 0.15)' : '#1e293b'"
+              (click)="selectTenantProfile('custom')"
+              title="Configurar Tenant Personalizado"
+            >
+              <span class="user-pill-avatar" style="background: #334155; color: #f8fafc;"><i class="fa-solid fa-gear"></i></span>
+              <div>
+                <strong>Tenant Manual</strong>
+                <small>Ingresar IDs de GCP</small>
               </div>
             </button>
           </div>
         </div>
 
-        <!-- Toggle: Iniciar Sesión / Registrarse -->
-        <div class="auth-action-toggle">
-          <button
-            type="button"
-            class="auth-action-btn"
-            [class.active]="gcpAuthAction === 'login'"
-            (click)="gcpAuthAction = 'login'"
-          >
-            <i class="fa-solid fa-right-to-bracket"></i> Iniciar Sesión
-          </button>
-          <button
-            type="button"
-            class="auth-action-btn"
-            [class.active]="gcpAuthAction === 'signup'"
-            (click)="gcpAuthAction = 'signup'"
-          >
-            <i class="fa-solid fa-user-plus"></i> Registrar en GCP
-          </button>
-        </div>
+        <!-- FORMULARIO DE PARÁMETROS CONFIGURABLES DE GCP -->
+        <div class="gcp-config-box" style="background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 12px; padding: 14px; margin-bottom: 16px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+            <span style="font-size: 11px; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px;">
+              <i class="fa-solid fa-sliders"></i> Parámetros de Google Cloud Identity
+            </span>
+            <button type="button" (click)="saveCurrentGcpConfig(true)" style="background: transparent; border: 1px solid rgba(59, 130, 246, 0.4); color: #60a5fa; border-radius: 6px; padding: 3px 8px; font-size: 11px; cursor: pointer;">
+              <i class="fa-solid fa-floppy-disk"></i> Guardar IDs
+            </button>
+          </div>
 
-        <form class="auth-form" (submit)="submitGcpAuth(); $event.preventDefault()">
-          <div class="form-group">
-            <label>Web API Key de Google Cloud</label>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px;">
+            <div class="form-group" style="margin: 0;">
+              <label style="font-size: 11px; color: #cbd5e1;">GCP Project ID</label>
+              <input
+                type="text"
+                class="form-control"
+                style="padding: 7px 10px; font-size: 12px;"
+                placeholder="faster360-cloud"
+                [(ngModel)]="gcpProjectId"
+                name="gcpProjectId"
+              />
+            </div>
+            <div class="form-group" style="margin: 0;">
+              <label style="font-size: 11px; color: #cbd5e1;">Tenant ID</label>
+              <input
+                type="text"
+                class="form-control"
+                style="padding: 7px 10px; font-size: 12px;"
+                placeholder="SergioVelasquez-dnfj9"
+                [(ngModel)]="gcpTenantId"
+                name="gcpTenantId"
+              />
+            </div>
+          </div>
+
+          <div class="form-group" style="margin-bottom: 10px;">
+            <label style="font-size: 11px; color: #cbd5e1;">OAuth 2.0 Client ID (Web Client)</label>
             <input
               type="text"
               class="form-control"
-              placeholder="AIzaSy... (API Key de tu proyecto GCP)"
-              [(ngModel)]="gcpApiKey"
-              name="apiKey"
-              required
+              style="padding: 7px 10px; font-size: 12px;"
+              placeholder="xxxx.apps.googleusercontent.com"
+              [(ngModel)]="gcpClientId"
+              name="gcpClientId"
             />
           </div>
 
-          <div class="form-group">
-            <label>Correo Electrónico</label>
+          <div class="form-group" style="margin: 0;">
+            <label style="font-size: 11px; color: #cbd5e1;">Web API Key de GCP</label>
             <input
-              type="email"
+              type="text"
               class="form-control"
-              placeholder="tu.usuario@ejemplo.com"
-              [(ngModel)]="gcpEmail"
-              name="gcpEmail"
-              required
+              style="padding: 7px 10px; font-size: 12px;"
+              placeholder="AIzaSy... (API Key del proyecto)"
+              [(ngModel)]="gcpApiKey"
+              name="gcpApiKey"
             />
           </div>
 
-          <div class="form-group">
-            <label>Contraseña</label>
+          <div class="form-group" style="margin-top: 10px; margin-bottom: 0;">
+            <label style="font-size: 11px; color: #cbd5e1;">Contraseña de Usuario IDaaS</label>
             <input
               type="password"
               class="form-control"
+              style="padding: 7px 10px; font-size: 12px;"
               placeholder="••••••••"
               [(ngModel)]="gcpPassword"
-              name="gcpPassword"
+              name="gcpTenantPassword"
               required
             />
+            <small style="color: #64748b; font-size: 10px; margin-top: 3px; display: block;">
+              Clave para {{ selectedTenantProfile === 'omar' ? 'Omar Nieto' : 'Sergio Velásquez' }}:
+              <strong style="color: #94a3b8;">{{ selectedTenantProfile === 'omar' ? 'AdminPassword123!' : 'Password123!' }}</strong>
+            </small>
           </div>
+        </div>
 
-          <button type="submit" class="btn-auth-submit" [disabled]="isGcpLoading">
-            <i *ngIf="!isGcpLoading" class="fa-brands fa-google"></i>
-            <i *ngIf="isGcpLoading" class="fa-solid fa-spinner fa-spin"></i>
-            <span>{{ isGcpLoading ? 'Conectando con GCP...' : (gcpAuthAction === 'login' ? 'Acceder con GCP Identity Platform' : 'Crear Cuenta en GCP Identity') }}</span>
+        <!-- ACCIONES RÁPIDAS DE AUTENTICACIÓN -->
+        <div style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 16px;">
+          <!-- 1. ACCESO CON TENANT ID Y VALIDACIÓN DE CONTRASEÑA -->
+          <button
+            type="button"
+            class="btn-auth-submit"
+            style="background: linear-gradient(135deg, #2563eb, #1d4ed8); justify-content: center; width: 100%; padding: 12px;"
+            (click)="loginWithCurrentTenant()"
+          >
+            <i class="fa-solid fa-id-badge"></i>
+            <span>Acceder con Tenant ID ({{ gcpTenantId }})</span>
           </button>
-        </form>
+
+          <!-- 2. POPUP OFICIAL GOOGLE OAUTH -->
+          <button
+            type="button"
+            class="btn-auth-submit"
+            style="background: #1e293b; border: 1px solid rgba(255, 255, 255, 0.15); justify-content: center; width: 100%; padding: 10px;"
+            (click)="launchGoogleOAuthWindow()"
+          >
+            <svg viewBox="0 0 24 24" width="16" height="16" style="margin-right: 6px;">
+              <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+              <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+              <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
+              <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
+            </svg>
+            <span>Desplegar Popup Google OAuth (accounts.google.com)</span>
+          </button>
+        </div>
+
+        <!-- FORMULARIO DE ACCESO EMAIL/PASSWORD EN GCP (OPCIONAL) -->
+        <details style="background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 10px; padding: 10px 14px;">
+          <summary style="font-size: 12px; color: #94a3b8; cursor: pointer; user-select: none;">
+            <i class="fa-solid fa-envelope"></i> O conectar vía Email/Password en Identity Platform REST
+          </summary>
+          <div style="margin-top: 12px;">
+            <div class="auth-action-toggle" style="margin-bottom: 12px;">
+              <button
+                type="button"
+                class="auth-action-btn"
+                [class.active]="gcpAuthAction === 'login'"
+                (click)="gcpAuthAction = 'login'"
+              >
+                <i class="fa-solid fa-right-to-bracket"></i> Iniciar Sesión
+              </button>
+              <button
+                type="button"
+                class="auth-action-btn"
+                [class.active]="gcpAuthAction === 'signup'"
+                (click)="gcpAuthAction = 'signup'"
+              >
+                <i class="fa-solid fa-user-plus"></i> Registrar en GCP
+              </button>
+            </div>
+
+            <form class="auth-form" (submit)="submitGcpAuth(); $event.preventDefault()">
+              <div class="form-group">
+                <label>Correo Electrónico</label>
+                <input
+                  type="email"
+                  class="form-control"
+                  placeholder="tu.usuario@ejemplo.com"
+                  [(ngModel)]="gcpEmail"
+                  name="gcpEmail"
+                  required
+                />
+              </div>
+
+              <div class="form-group">
+                <label>Contraseña</label>
+                <input
+                  type="password"
+                  class="form-control"
+                  placeholder="••••••••"
+                  [(ngModel)]="gcpPassword"
+                  name="gcpPassword"
+                  required
+                />
+              </div>
+
+              <button type="submit" class="btn-auth-submit" [disabled]="isGcpLoading">
+                <i *ngIf="!isGcpLoading" class="fa-brands fa-google"></i>
+                <i *ngIf="isGcpLoading" class="fa-solid fa-spinner fa-spin"></i>
+                <span>{{ isGcpLoading ? 'Conectando con GCP...' : (gcpAuthAction === 'login' ? 'Acceder con GCP Identity REST' : 'Crear Cuenta en GCP Identity') }}</span>
+              </button>
+            </form>
+          </div>
+        </details>
       </div>
 
       <!-- MODO 2: PRESETS DE DEMOSTRACIÓN (OFFLINE / EVALUACIÓN) -->

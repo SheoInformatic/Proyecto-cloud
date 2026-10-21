@@ -1,0 +1,32 @@
+services:
+  # RabbitMQ con Consola de Administración Web (Management Plugin)
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: faster360-rabbitmq
+    restart: unless-stopped
+    ports:
+      - "5672:5672"     # Puerto AMQP para microservicios
+      - "15672:15672"   # Consola Web (http://localhost:15672 - user: guest / pass: guest)
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+
+  # Base de Datos PostgreSQL para OrderService
+  postgres:
+    image: postgres:15-alpine
+    container_name: faster360-postgres
+    restart: unless-stopped
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_DB: faster360_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+volumes:
+  rabbitmq_data:
+  postgres_data:

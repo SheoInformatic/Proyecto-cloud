@@ -1,0 +1,64 @@
+# ==========================================
+# Compilación y artefactos de Maven (Crítico)
+# ==========================================
+target/
+pom.xml.tag
+pom.xml.releaseBackup
+pom.xml.versionsBackup
+pom.xml.next
+release.properties
+dependency-reduced-pom.xml
+buildNumber.properties
+.mvn/timing.properties
+.mvn/wrapper/maven-wrapper.jar
+!**/src/main/**/target/
+!**/src/test/**/target/
+
+# ==========================================
+# Logs y archivos de depuración
+# ==========================================
+*.log
+logs/
+
+# ==========================================
+# Secretos, variables y credenciales locales
+# ==========================================
+.env
+*.local
+
+# ==========================================
+# Entornos de desarrollo e IDEs
+# ==========================================
+# Visual Studio Code
+.vscode/
+*.code-workspace
+
+# Eclipse / Spring Tool Suite (STS)
+.apt_generated
+.classpath
+.factorypath
+.project
+.settings/
+.springBeans
+.sts4-cache/
+
+# IntelliJ IDEA
+.idea/
+*.iws
+*.iml
+*.ipr
+out/
+
+# NetBeans
+/nbproject/private/
+/build/
+/nbdist/
+/.nb-gradle/
+
+# ==========================================
+# Archivos temporales del sistema operativo
+# ==========================================
+.DS_Store
+Thumbs.db
+ehthumbs.db
+desktop.ini

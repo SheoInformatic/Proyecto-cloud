@@ -1,0 +1,48 @@
+server:
+  port: 8084
+
+spring:
+  application:
+    name: kafka-admin-service
+
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092,localhost:9093,localhost:9094}
+    admin:
+      fail-fast: false
+      properties:
+        request.timeout.ms: 15000
+
+# Seguridad: la API exige JWT del IDaaS y solo estas cuentas son administradoras (separadas por coma)
+faster360:
+  security:
+    admin-emails: ${KAFKA_ADMIN_EMAILS:om.nieto@duocuc.cl}
+
+  # Definición declarativa de los tópicos del sistema (se crean al iniciar este servicio)
+  kafka:
+    # Consumer groups del sistema (usados por notification-ticket-service): no se pueden eliminar
+    protected-groups: faster360-order-events-group,faster360-analytics-group,faster360-dlt-group
+    topics:
+      # Flujo operacional: un evento por orden creada (notificaciones / tickets)
+      events:
+        name: faster360.orders.events
+        partitions: 3
+        replicas: 3
+        retention-ms: 604800000        # 7 días
+        cleanup-policy: delete
+        min-insync-replicas: 2
+      # Flujo analítico: estado por orden, se compacta para conservar el último valor por clave
+      analytics:
+        name: faster360.orders.analytics
+        partitions: 6
+        replicas: 3
+        retention-ms: 2592000000       # 30 días
+        cleanup-policy: compact,delete
+        min-insync-replicas: 2
+      # Dead Letter Topic de los consumidores (mensajes que agotaron los reintentos)
+      dlt:
+        name: faster360.orders.events.dlt
+        partitions: 3
+        replicas: 3
+        retention-ms: 1209600000       # 14 días
+        cleanup-policy: delete
+        min-insync-replicas: 2

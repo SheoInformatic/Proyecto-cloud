@@ -7,6 +7,9 @@ echo   DETENIENDO FASTER 360 - TODOS LOS SERVICIOS
 echo ========================================================
 
 echo 1. Deteniendo contenedores Docker (RabbitMQ y PostgreSQL)...
+docker compose -f docker-compose.kafka-ui.yml down
+docker compose -f docker-compose.kafka.yml down
+docker compose -f docker-compose.rabbitmq-cluster.yml down
 docker compose down
 
 echo 2. Deteniendo Microservicios Java (Spring Boot)...

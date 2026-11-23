@@ -6,8 +6,17 @@ echo ========================================================
 echo   INICIANDO FASTER 360 - ARQUITECTURA CLOUD ^& RABBITMQ
 echo ========================================================
 
-echo 1. Levantando Contenedores Docker (RabbitMQ + PostgreSQL)...
+echo 1. Levantando infraestructura Docker (PostgreSQL, RabbitMQ cluster, Kafka, Kafka-UI)...
 docker compose up -d
+docker compose -f docker-compose.rabbitmq-cluster.yml up -d
+docker compose -f docker-compose.kafka.yml up -d
+docker compose -f docker-compose.kafka-ui.yml up -d
+echo    Esperando 40s a que los brokers Kafka esten listos...
+timeout /t 40 /nobreak >nul
+
+echo 1b. Iniciando Kafka Admin (Puerto 8084) - crea los topicos del sistema...
+start "KafkaAdmin (8084)" cmd /k "cd /d ""%~dp0kafka-admin-service"" && mvnw.cmd spring-boot:run"
+timeout /t 20 /nobreak >nul
 
 echo 2. Iniciando Microservicio OrderService (Puerto 8081)...
 start "OrderService (8081)" cmd /k "cd /d ""%~dp0orderservice"" && mvnw.cmd spring-boot:run"
@@ -26,6 +35,8 @@ echo ========================================================
 echo   Todos los servicios han sido lanzados en sus terminales.
 echo   - Frontend: http://localhost:4200
 echo   - RabbitMQ Console: http://localhost:15672 (guest/guest)
+echo   - Kafka-UI: http://localhost:8090
+echo   - Kafka Admin API: http://localhost:8084/api/kafka/topics
 echo ========================================================
 echo.
 pause

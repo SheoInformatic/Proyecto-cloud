@@ -33,7 +33,7 @@ faster360:
       # Flujo analítico: estado por orden, se compacta para conservar el último valor por clave
       analytics:
         name: faster360.orders.analytics
-        partitions: 6
+        partitions: 3
         replicas: 3
         retention-ms: 2592000000       # 30 días
         cleanup-policy: compact,delete

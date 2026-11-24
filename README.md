@@ -27,8 +27,11 @@ graph TD
         EX["faster360.orders.exchange (Topic)"]
         QN["faster360.orders.notification.queue"]
         QT["faster360.orders.ticket.queue"]
+        QA["faster360.orders.audit.queue"]
         DLX["faster360.orders.dlx (Direct)"]
-        QDLQ["faster360.orders.dlq (Dead Letter Queue)"]
+        DN["faster360.orders.notification.dlq"]
+        DT["faster360.orders.ticket.dlq"]
+        DA["faster360.orders.audit.dlq"]
     end
 
     subgraph Storage ["Persistencia"]
@@ -43,10 +46,16 @@ graph TD
     OS -->|6. Publicar order.created| EX
     EX -->|Enrutamiento Pub-Sub| QN
     EX -->|Enrutamiento Pub-Sub| QT
+    EX -->|Enrutamiento Pub-Sub| QA
     QN -->|Consumo con ACK manual| NS
     QT -->|Consumo con ACK manual| NS
+    QA -->|Consumo con ACK manual| NS
     QN -.->|Fallo / basicNack| DLX
-    DLX --> QDLQ
+    QT -.->|Fallo / basicNack| DLX
+    QA -.->|Fallo / basicNack| DLX
+    DLX -->|order.notification.dead-letter| DN
+    DLX -->|order.ticket.dead-letter| DT
+    DLX -->|order.audit.dead-letter| DA
 ```
 
 ---
@@ -143,10 +152,21 @@ El sistema cuenta con un allowlist estricto en frontend y backend ([`JwtTokenVal
 
 * **Exchange:** `faster360.orders.exchange` (Tipo `topic`, Durable).
 * **Routing Keys:** 
-  * `order.created`: Enrutado hacia `faster360.orders.notification.queue` y `faster360.orders.ticket.queue`.
-  * `order.dead-letter`: Enrutado hacia `faster360.orders.dlq`.
+  * `order.created`: Enrutado hacia las tres colas de trabajo: `faster360.orders.notification.queue`, `faster360.orders.ticket.queue` y `faster360.orders.audit.queue`.
+* **Dead Letter Exchange:** `faster360.orders.dlx` (Tipo `direct`, Durable). Cada cola tiene **su propia DLQ**, enlazada con su propia routing key:
+  * `order.notification.dead-letter` → `faster360.orders.notification.dlq`
+  * `order.ticket.dead-letter` → `faster360.orders.ticket.dlq`
+  * `order.audit.dead-letter` → `faster360.orders.audit.dlq`
 * **Confirmación de Entrega:** Se implementa **ACK Manual** (`channel.basicAck`).
-* **Prueba de Dead Letter Queue (DLQ):** Si se genera un pedido con el correo `fail@faster360.com`, el consumidor ejecuta `channel.basicNack(deliveryTag, false, requeue = false)` desviando automáticamente el mensaje a la cola `faster360.orders.dlq`.
+* **Prueba de Dead Letter Queue (DLQ):** cada cola falla con su propia regla de simulación, y el consumidor ejecuta `channel.basicNack(deliveryTag, false, requeue = false)`, que desvía el mensaje a la DLQ de esa cola:
+
+| Para fallar | Cola que falla | DLQ donde queda |
+| :--- | :--- | :--- |
+| Pedido con el correo `fail@faster360.com` | `notification.queue` | `faster360.orders.notification.dlq` |
+| Pedido con monto exacto `999` | `ticket.queue` | `faster360.orders.ticket.dlq` |
+| Pedido con monto exacto `777` | `audit.queue` | `faster360.orders.audit.dlq` |
+
+* Un consumidor audita las tres DLQ y deja constancia en el log. Para ver los mensajes acumulados en la consola de RabbitMQ, inicia `notification-ticket-service` con la variable de entorno `DLQ_AUDIT_ENABLED=false`.
 
 ---
 
@@ -158,7 +178,7 @@ Kafka **complementa** a RabbitMQ: el flujo de colas (notificación, ticket y DLQ
 graph LR
     OS[orderservice :8081] -->|order.created| RMQ[(RabbitMQ)]
     OS -->|clave=orderNumber| T1[["faster360.orders.events<br/>3 part · RF3 · delete 7d"]]
-    OS -->|clave=orderNumber| T2[["faster360.orders.analytics<br/>6 part · RF3 · compact,delete 30d"]]
+    OS -->|clave=orderNumber| T2[["faster360.orders.analytics<br/>3 part · RF3 · compact,delete 30d"]]
     T1 -->|group order-events| NS[notification-ticket-service :8082]
     T2 -->|group analytics| NS
     NS -.->|3 reintentos o payload inválido| DLT[["faster360.orders.events.dlt"]]
@@ -179,7 +199,7 @@ graph LR
 | Tópico | Particiones | Réplicas | Retención | cleanup.policy | Uso |
 | :--- | :-: | :-: | :-: | :--- | :--- |
 | `faster360.orders.events` | 3 | 3 | 7 días | `delete` | Evento operacional por orden |
-| `faster360.orders.analytics` | 6 | 3 | 30 días | `compact,delete` | Datos analíticos por orden |
+| `faster360.orders.analytics` | 3 | 3 | 30 días | `compact,delete` | Datos analíticos por orden |
 | `faster360.orders.events.dlt` | 3 | 3 | 14 días | `delete` | Mensajes que agotaron los reintentos |
 
 ### Productores y consumidores

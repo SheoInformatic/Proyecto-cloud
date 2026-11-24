@@ -10,6 +10,11 @@ import org.springframework.context.annotation.Configuration;
 import java.util.HashMap;
 import java.util.Map;
 
+/**
+ * Topología de RabbitMQ: un exchange topic para los pedidos, un exchange direct para los
+ * mensajes fallidos (DLX) y tres colas de trabajo (notificación, ticket y auditoría),
+ * cada una con su propia Dead Letter Queue.
+ */
 @Configuration
 public class RabbitMQTopologyConfig {
 
@@ -19,7 +24,7 @@ public class RabbitMQTopologyConfig {
         this.properties = properties;
     }
 
-    // 1. Exchanges
+    // 1. Exchanges: topic para pedidos, direct para dead-letter
     @Bean
     public TopicExchange orderExchange() {
         return new TopicExchange(properties.getExchange(), true, false);
@@ -30,52 +35,90 @@ public class RabbitMQTopologyConfig {
         return new DirectExchange(properties.getDlx(), true, false);
     }
 
-    // 2. Dead Letter Queue (DLQ)
-    @Bean
-    public Queue deadLetterQueue() {
-        return QueueBuilder.durable(properties.getQueues().getDlq()).build();
-    }
-
-    @Bean
-    public Binding dlqBinding() {
-        return BindingBuilder.bind(deadLetterQueue())
-                .to(deadLetterExchange())
-                .with(properties.getRoutingKeys().getDeadLetter());
-    }
-
-    // 3. Cola de Notificaciones configurada con DLQ
-    @Bean
-    public Queue notificationQueue() {
+    // 2. Una cola de trabajo por responsabilidad, cada una apuntando a su DLQ mediante su routing key
+    private Queue workQueue(String name, String deadLetterRoutingKey) {
         Map<String, Object> args = new HashMap<>();
         args.put("x-dead-letter-exchange", properties.getDlx());
-        args.put("x-dead-letter-routing-key", properties.getRoutingKeys().getDeadLetter());
-        return new Queue(properties.getQueues().getNotification(), true, false, false, args);
+        args.put("x-dead-letter-routing-key", deadLetterRoutingKey);
+        return new Queue(name, true, false, false, args);
+    }
+
+    private Binding orderBinding(Queue queue) {
+        return BindingBuilder.bind(queue)
+                .to(orderExchange())
+                .with(properties.getRoutingKeys().getOrderCreated());
+    }
+
+    private Binding dlqBinding(Queue dlq, String deadLetterRoutingKey) {
+        return BindingBuilder.bind(dlq)
+                .to(deadLetterExchange())
+                .with(deadLetterRoutingKey);
+    }
+
+    // Cola de Notificaciones + su DLQ
+    @Bean
+    public Queue notificationQueue() {
+        return workQueue(properties.getQueues().getNotification(), properties.getRoutingKeys().getNotificationDeadLetter());
+    }
+
+    @Bean
+    public Queue notificationDlq() {
+        return QueueBuilder.durable(properties.getQueues().getNotificationDlq()).build();
     }
 
     @Bean
     public Binding notificationBinding() {
-        return BindingBuilder.bind(notificationQueue())
-                .to(orderExchange())
-                .with(properties.getRoutingKeys().getOrderCreated());
+        return orderBinding(notificationQueue());
     }
 
-    // 4. Cola de Emisión de Tickets configurada con DLQ
+    @Bean
+    public Binding notificationDlqBinding() {
+        return dlqBinding(notificationDlq(), properties.getRoutingKeys().getNotificationDeadLetter());
+    }
+
+    // Cola de Emisión de Tickets + su DLQ
     @Bean
     public Queue ticketQueue() {
-        Map<String, Object> args = new HashMap<>();
-        args.put("x-dead-letter-exchange", properties.getDlx());
-        args.put("x-dead-letter-routing-key", properties.getRoutingKeys().getDeadLetter());
-        return new Queue(properties.getQueues().getTicket(), true, false, false, args);
+        return workQueue(properties.getQueues().getTicket(), properties.getRoutingKeys().getTicketDeadLetter());
+    }
+
+    @Bean
+    public Queue ticketDlq() {
+        return QueueBuilder.durable(properties.getQueues().getTicketDlq()).build();
     }
 
     @Bean
     public Binding ticketBinding() {
-        return BindingBuilder.bind(ticketQueue())
-                .to(orderExchange())
-                .with(properties.getRoutingKeys().getOrderCreated());
+        return orderBinding(ticketQueue());
     }
 
-    // 5. Conversor JSON para serializar/deserializar mensajes con soporte para Java 8 Date/Time
+    @Bean
+    public Binding ticketDlqBinding() {
+        return dlqBinding(ticketDlq(), properties.getRoutingKeys().getTicketDeadLetter());
+    }
+
+    // Cola de Auditoría + su DLQ
+    @Bean
+    public Queue auditQueue() {
+        return workQueue(properties.getQueues().getAudit(), properties.getRoutingKeys().getAuditDeadLetter());
+    }
+
+    @Bean
+    public Queue auditDlq() {
+        return QueueBuilder.durable(properties.getQueues().getAuditDlq()).build();
+    }
+
+    @Bean
+    public Binding auditBinding() {
+        return orderBinding(auditQueue());
+    }
+
+    @Bean
+    public Binding auditDlqBinding() {
+        return dlqBinding(auditDlq(), properties.getRoutingKeys().getAuditDeadLetter());
+    }
+
+    // 3. Conversor JSON para serializar/deserializar mensajes con soporte para Java 8 Date/Time
     @Bean
     public MessageConverter jsonMessageConverter() {
         com.fasterxml.jackson.databind.ObjectMapper objectMapper = new com.fasterxml.jackson.databind.ObjectMapper();

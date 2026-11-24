@@ -9,6 +9,10 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
+/**
+ * Declara (de forma idempotente, igual que orderservice) las tres colas de trabajo y la
+ * Dead Letter Queue propia de cada una.
+ */
 @Configuration
 public class RabbitConsumerConfig {
 
@@ -24,14 +28,29 @@ public class RabbitConsumerConfig {
     @Value("${faster360.messaging.queues.ticket}")
     private String ticketQueue;
 
-    @Value("${faster360.messaging.queues.dlq}")
-    private String dlqQueue;
+    @Value("${faster360.messaging.queues.audit}")
+    private String auditQueue;
+
+    @Value("${faster360.messaging.queues.notification-dlq}")
+    private String notificationDlq;
+
+    @Value("${faster360.messaging.queues.ticket-dlq}")
+    private String ticketDlq;
+
+    @Value("${faster360.messaging.queues.audit-dlq}")
+    private String auditDlq;
 
     @Value("${faster360.messaging.routing-keys.order-created}")
     private String orderCreatedRoutingKey;
 
-    @Value("${faster360.messaging.routing-keys.dead-letter}")
-    private String deadLetterRoutingKey;
+    @Value("${faster360.messaging.routing-keys.notification-dead-letter}")
+    private String notificationDeadLetterKey;
+
+    @Value("${faster360.messaging.routing-keys.ticket-dead-letter}")
+    private String ticketDeadLetterKey;
+
+    @Value("${faster360.messaging.routing-keys.audit-dead-letter}")
+    private String auditDeadLetterKey;
 
     @Bean
     public RabbitAdmin rabbitAdmin(ConnectionFactory connectionFactory) {
@@ -46,51 +65,63 @@ public class RabbitConsumerConfig {
     }
 
     @Bean
-    public Queue dlqQueue() {
-        return QueueBuilder.durable(dlqQueue).build();
-    }
-
-    @Bean
-    public Binding dlqBinding() {
-        return BindingBuilder.bind(dlqQueue())
-                .to(dlxExchange())
-                .with(deadLetterRoutingKey);
-    }
-
-    @Bean
     public TopicExchange ordersExchange() {
         return new TopicExchange(ordersExchange, true, false);
     }
 
-    @Bean
-    public Queue notificationQueue() {
-        return QueueBuilder.durable(notificationQueue)
+    private Queue workQueue(String name, String deadLetterKey) {
+        return QueueBuilder.durable(name)
                 .withArgument("x-dead-letter-exchange", dlxExchange)
-                .withArgument("x-dead-letter-routing-key", deadLetterRoutingKey)
+                .withArgument("x-dead-letter-routing-key", deadLetterKey)
                 .build();
     }
 
-    @Bean
-    public Queue ticketQueue() {
-        return QueueBuilder.durable(ticketQueue)
-                .withArgument("x-dead-letter-exchange", dlxExchange)
-                .withArgument("x-dead-letter-routing-key", deadLetterRoutingKey)
-                .build();
+    private Binding orderBinding(Queue queue) {
+        return BindingBuilder.bind(queue).to(ordersExchange()).with(orderCreatedRoutingKey);
     }
 
-    @Bean
-    public Binding notificationBinding() {
-        return BindingBuilder.bind(notificationQueue())
-                .to(ordersExchange())
-                .with(orderCreatedRoutingKey);
+    private Binding dlqBinding(Queue dlq, String deadLetterKey) {
+        return BindingBuilder.bind(dlq).to(dlxExchange()).with(deadLetterKey);
     }
 
+    // Notificación + su DLQ
     @Bean
-    public Binding ticketBinding() {
-        return BindingBuilder.bind(ticketQueue())
-                .to(ordersExchange())
-                .with(orderCreatedRoutingKey);
-    }
+    public Queue notificationQueue() { return workQueue(notificationQueue, notificationDeadLetterKey); }
+
+    @Bean
+    public Queue notificationDlq() { return QueueBuilder.durable(notificationDlq).build(); }
+
+    @Bean
+    public Binding notificationBinding() { return orderBinding(notificationQueue()); }
+
+    @Bean
+    public Binding notificationDlqBinding() { return dlqBinding(notificationDlq(), notificationDeadLetterKey); }
+
+    // Ticket + su DLQ
+    @Bean
+    public Queue ticketQueue() { return workQueue(ticketQueue, ticketDeadLetterKey); }
+
+    @Bean
+    public Queue ticketDlq() { return QueueBuilder.durable(ticketDlq).build(); }
+
+    @Bean
+    public Binding ticketBinding() { return orderBinding(ticketQueue()); }
+
+    @Bean
+    public Binding ticketDlqBinding() { return dlqBinding(ticketDlq(), ticketDeadLetterKey); }
+
+    // Auditoría + su DLQ
+    @Bean
+    public Queue auditQueue() { return workQueue(auditQueue, auditDeadLetterKey); }
+
+    @Bean
+    public Queue auditDlq() { return QueueBuilder.durable(auditDlq).build(); }
+
+    @Bean
+    public Binding auditBinding() { return orderBinding(auditQueue()); }
+
+    @Bean
+    public Binding auditDlqBinding() { return dlqBinding(auditDlq(), auditDeadLetterKey); }
 
     @Bean
     public MessageConverter jsonMessageConverter() {

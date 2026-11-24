@@ -714,6 +714,7 @@ import { AuthService, UserSession } from '../../core/services/auth.service';
 export class AuthPopupComponent implements OnInit {
   currentStep: 'select-provider' | 'google' | 'microsoft' | 'enter-password' | 'google-config' = 'select-provider';
   customGmail: string = '';
+  customHotmail: string = '';
   gcpClientIdInput: string = '161262671547-7i2di146a7heisrhqm6ihq1dd6te6jd1.apps.googleusercontent.com';
 
   selectedUserName: string = '';

@@ -72,7 +72,7 @@ public class JwtTokenValidator {
 
             Matcher tenantMatcher = Pattern.compile("\"tenant_id\"\\s*:\\s*\"([^\"]+)\"").matcher(payloadJson);
             if (tenantMatcher.find()) {
-                log.info("Tenant ID de GCP Identity Platform verificado: {}", tenantMatcher.group(1));
+                log.info("Tenant ID presente en el token (informativo, no se valida): {}", tenantMatcher.group(1));
             }
 
             // 4. Validar política de seguridad IDaaS de GCP: Cuentas autorizadas en el registro (@gmail.com / @duocuc.cl)
@@ -86,13 +86,13 @@ public class JwtTokenValidator {
                 }
 
                 if (ALLOWED_GCP_USERS.contains(normalizedEmail)) {
-                    log.info("Usuario verificado en el registro oficial de GCP Identity Platform: {}", normalizedEmail);
+                    log.info("Correo incluido en la lista de usuarios de demostración: {}", normalizedEmail);
                 } else {
                     log.info("Correo válido con dominio oficial de Google verificado: {}", normalizedEmail);
                 }
             }
 
-            log.info("JWT IDaaS validado con éxito para el usuario: {}", user);
+            log.info("JWT aceptado (estructura, emisor, expiración y dominio; la firma no se verifica) para el usuario: {}", user);
             return true;
 
         } catch (Exception e) {

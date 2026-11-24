@@ -215,3 +215,19 @@ curl -X PUT http://localhost:8084/api/kafka/topics/faster360.orders.events/confi
   -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" -d '{"configs":{"retention.ms":"86400000"}}'
 ```
+
+---
+
+## 🔐 Limitaciones de seguridad conocidas
+
+Este proyecto es académico y varias decisiones de EP3 se mantienen tal cual. Se documentan aquí para no darlas por resueltas:
+
+| Limitación | Detalle | Cómo corregirla en producción |
+| :--- | :--- | :--- |
+| **JWT sin verificar la firma** | `orderservice`, `kafka-admin-service` y `rabbit-admin-service` validan estructura, expiración, emisor, correo y dominio, pero **no** la firma criptográfica contra las claves públicas (JWKS) de Google. Quien conozca el formato puede fabricar un token con el correo de un administrador | Verificar la firma con las claves públicas de Google y fijar `iss` y `aud` exactos |
+| **Login demo en el navegador** | Para las cuentas de Sergio y Omar, el frontend compara la contraseña con un texto fijo y arma el token localmente (`loginWithGcpTenant`), sin pasar por GCP | Usar siempre el login real de GCP Identity Platform (`signInWithPassword`) |
+| **Tenant no validado en el backend** | El `tenant_id` del token se lee y se registra en el log, pero ningún servicio lo compara con un valor esperado. El multi-tenant de GCP separa usuarios en GCP, pero el backend no lo hace cumplir | Comparar `firebase.tenant` con los tenants autorizados, tras verificar la firma |
+| **Contraseñas de demostración visibles** | Las cuentas demo y sus contraseñas están en este README y en el código del frontend, y el repositorio es público | Cambiar o deshabilitar esas cuentas al terminar la evaluación y no versionar credenciales |
+| **API key de GCP en el frontend** | Las API keys web de Identity Platform están pensadas para ser públicas, pero deben restringirse en GCP. No se encontró ningún `client_secret` ni llave privada en el repositorio | Restringir la key por dominio y por API en la consola de GCP |
+
+Los servicios de administración sí exigen un JWT de una cuenta administradora (401 sin token, 403 sin rol), pero, por lo anterior, esa protección es de nivel demostrativo.

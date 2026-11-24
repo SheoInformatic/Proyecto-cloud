@@ -86,13 +86,13 @@ public class JwtTokenValidator {
                 }
 
                 if (ALLOWED_GCP_USERS.contains(normalizedEmail)) {
-                    log.info("Usuario verificado en el registro oficial de GCP Identity Platform: {}", normalizedEmail);
+                    log.info("Correo incluido en la lista de usuarios de demostración: {}", normalizedEmail);
                 } else {
                     log.info("Correo válido con dominio oficial de Google verificado: {}", normalizedEmail);
                 }
             }
 
-            log.info("JWT IDaaS validado con éxito para el usuario: {}", user);
+            log.info("JWT aceptado (estructura, emisor, expiración y dominio; la firma no se verifica) para el usuario: {}", user);
             return true;
 
         } catch (Exception e) {

@@ -17,6 +17,10 @@ spring:
         missing-queues-fatal: false
         prefetch: 1 # Procesa 1 mensaje a la vez para balanceo óptimo
 
+  # Conexión Kafka (clúster de 3 brokers del docker-compose.kafka.yml)
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092,localhost:9093,localhost:9094}
+
 # Configuración centralizada de RabbitMQ para Faster 360
 faster360:
   messaging:
@@ -29,3 +33,23 @@ faster360:
       notification: faster360.orders.notification.queue
       ticket: faster360.orders.ticket.queue
       dlq: faster360.orders.dlq
+
+# Kafka: tópicos (administrados por kafka-admin-service), consumer groups y política de errores
+  kafka:
+    topics:
+      events: faster360.orders.events
+      analytics: faster360.orders.analytics
+      dlt: faster360.orders.events.dlt
+    groups:
+      order-events: faster360-order-events-group
+      analytics: faster360-analytics-group
+      dlt: faster360-dlt-group
+    consumer:
+      concurrency: 3            # hilos por listener (<= particiones del tópico)
+      max-poll-records: 50
+      session-timeout-ms: 30000
+    retry:
+      max-attempts: 3           # reintentos antes de enviar al DLT
+      initial-interval-ms: 1000
+      multiplier: 2.0
+      max-interval-ms: 8000

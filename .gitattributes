@@ -1,0 +1,2 @@
+# El contenedor RabbitMQ (Linux) lee este archivo: debe quedar con saltos de linea LF
+*.conf text eol=lf

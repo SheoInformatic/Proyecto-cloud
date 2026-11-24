@@ -1,0 +1,24 @@
+name: faster360
+
+# Kafka-UI: administración de brokers, tópicos y consumer groups.
+# Requiere que docker-compose.kafka.yml esté levantado (red faster360-kafka).
+# Acceso: http://localhost:8090
+services:
+  kafka-ui:
+    image: provectuslabs/kafka-ui:v0.7.2
+    container_name: faster360-kafka-ui
+    restart: unless-stopped
+    ports:
+      - "8090:8080"
+    environment:
+      KAFKA_CLUSTERS_0_NAME: faster360
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka1:29092,kafka2:29092,kafka3:29092
+      KAFKA_CLUSTERS_0_ZOOKEEPER: zookeeper:2181
+      DYNAMIC_CONFIG_ENABLED: "true"
+    networks:
+      - faster360-kafka
+
+networks:
+  faster360-kafka:
+    name: faster360-kafka
+    external: true

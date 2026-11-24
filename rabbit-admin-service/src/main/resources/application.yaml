@@ -10,3 +10,8 @@ spring:
     port: ${RABBITMQ_PORT:5672}
     username: ${RABBITMQ_USER:guest}
     password: ${RABBITMQ_PASSWORD:guest}
+
+# Solo estas cuentas (correos del IDaaS, separados por coma) pueden usar la API de administración
+faster360:
+  security:
+    admin-emails: ${RABBIT_ADMIN_EMAILS:om.nieto@duocuc.cl}

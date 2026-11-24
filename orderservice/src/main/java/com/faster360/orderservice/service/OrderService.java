@@ -5,6 +5,7 @@ import com.faster360.orderservice.domain.Order;
 import com.faster360.orderservice.domain.OrderStatus;
 import com.faster360.orderservice.dto.CreateOrderRequest;
 import com.faster360.orderservice.dto.OrderCreatedEvent;
+import com.faster360.orderservice.messaging.OrderKafkaPublisher;
 import com.faster360.orderservice.repository.OrderRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -23,13 +24,16 @@ public class OrderService {
     private final OrderRepository orderRepository;
     private final RabbitTemplate rabbitTemplate;
     private final RabbitMQProperties rabbitMQProperties;
+    private final OrderKafkaPublisher orderKafkaPublisher;
 
     public OrderService(OrderRepository orderRepository,
                         RabbitTemplate rabbitTemplate,
-                        RabbitMQProperties rabbitMQProperties) {
+                        RabbitMQProperties rabbitMQProperties,
+                        OrderKafkaPublisher orderKafkaPublisher) {
         this.orderRepository = orderRepository;
         this.rabbitTemplate = rabbitTemplate;
         this.rabbitMQProperties = rabbitMQProperties;
+        this.orderKafkaPublisher = orderKafkaPublisher;
     }
 
     @Transactional
@@ -64,6 +68,9 @@ public class OrderService {
         log.info("Evento OrderCreated publicado al exchange '{}' con routing key '{}'",
                 rabbitMQProperties.getExchange(),
                 rabbitMQProperties.getRoutingKeys().getOrderCreated());
+
+        // 3. Publicación hacia Kafka (eventos operacionales + analítica); no afecta el flujo RabbitMQ
+        orderKafkaPublisher.publishOrderCreated(savedOrder, event);
 
         return savedOrder;
     }

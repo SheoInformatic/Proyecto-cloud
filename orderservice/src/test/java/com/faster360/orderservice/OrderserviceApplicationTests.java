@@ -14,6 +14,9 @@ class OrderserviceApplicationTests {
 	@MockitoBean
 	private RabbitTemplate rabbitTemplate;
 
+	@MockitoBean
+	private com.faster360.orderservice.messaging.OrderKafkaPublisher orderKafkaPublisher;
+
 	@Test
 	void contextLoads() {
 	}

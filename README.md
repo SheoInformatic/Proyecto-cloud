@@ -1,4 +1,4 @@
-# Faster 360° — Arquitectura Cloud & Mensajería Asíncrona (EP3)
+# Faster 360° — Arquitectura Cloud, Mensajería Asíncrona y Streaming (EP3 + EP5)
 
 Plataforma e-commerce desacoplada basada en microservicios, mensajería asíncrona empresarial con **RabbitMQ**, persistencia en **PostgreSQL (Cloud SQL)** y autenticación **IDaaS Multi-Tenant** mediante **Google Cloud Platform (Identity Platform & Google OAuth 2.0)**.
 
@@ -59,6 +59,9 @@ graph TD
 | **Order Service** | Spring Boot / Java 17 | `8081` | [http://localhost:8081/api/orders](http://localhost:8081/api/orders) |
 | **Notification & Ticket** | Spring Boot / Java 17 | `8082` | [http://localhost:8082](http://localhost:8082) |
 | **Rabbit Admin Service** | Spring Boot / Java 17 | `8083` | [http://localhost:8083](http://localhost:8083) |
+| **Kafka Admin Service** | Spring Boot / Java 17 | `8084` | [http://localhost:8084/api/kafka/topics](http://localhost:8084/api/kafka/topics) |
+| **Kafka-UI** | provectuslabs/kafka-ui | `8090` | [http://localhost:8090](http://localhost:8090) |
+| **Kafka Brokers (x3)** | cp-kafka 7.6 + Zookeeper | `9092/9093/9094` | `localhost:9092,localhost:9093,localhost:9094` |
 | **RabbitMQ Consola Web** | RabbitMQ 3 Management | `15672` | [http://localhost:15672](http://localhost:15672) (`guest`/`guest`) |
 | **RabbitMQ Protocolo AMQP** | Protocolo AMQP 0-9-1 | `5672` | `amqp://guest:guest@localhost:5672` |
 | **Base de Datos** | PostgreSQL 15 Alpine | `5432` | `jdbc:postgresql://localhost:5432/faster360_db` |
@@ -90,9 +93,18 @@ El repositorio incluye un script lanzador que inicia Docker y todos los microser
 
 ### Opción 2: Inicio Manual (Paso a Paso)
 
-#### 1. Iniciar Infraestructura Docker (RabbitMQ y Base de Datos)
+#### 1. Iniciar Infraestructura Docker
 ```bash
-docker compose up -d
+docker compose up -d                                         # PostgreSQL
+docker compose -f docker-compose.rabbitmq-cluster.yml up -d  # RabbitMQ (clúster de 3 nodos)
+docker compose -f docker-compose.kafka.yml up -d             # Zookeeper + 3 brokers Kafka
+docker compose -f docker-compose.kafka-ui.yml up -d          # Kafka-UI (requiere el anterior)
+```
+
+#### 1b. Iniciar Kafka Admin (crea los tópicos; debe ir antes que productor y consumidores)
+```bash
+cd kafka-admin-service
+./mvnw spring-boot:run
 ```
 
 #### 2. Iniciar Microservicio de Órdenes (Productor)
@@ -135,3 +147,71 @@ El sistema cuenta con un allowlist estricto en frontend y backend ([`JwtTokenVal
   * `order.dead-letter`: Enrutado hacia `faster360.orders.dlq`.
 * **Confirmación de Entrega:** Se implementa **ACK Manual** (`channel.basicAck`).
 * **Prueba de Dead Letter Queue (DLQ):** Si se genera un pedido con el correo `fail@faster360.com`, el consumidor ejecuta `channel.basicNack(deliveryTag, false, requeue = false)` desviando automáticamente el mensaje a la cola `faster360.orders.dlq`.
+
+---
+
+## 🌊 Streaming con Apache Kafka (EP5)
+
+Kafka **complementa** a RabbitMQ: el flujo de colas (notificación, ticket y DLQ) no cambia; en paralelo `orderservice` publica los eventos en Kafka para procesamiento por streaming y analítica.
+
+```mermaid
+graph LR
+    OS[orderservice :8081] -->|order.created| RMQ[(RabbitMQ)]
+    OS -->|clave=orderNumber| T1[["faster360.orders.events<br/>3 part · RF3 · delete 7d"]]
+    OS -->|clave=orderNumber| T2[["faster360.orders.analytics<br/>6 part · RF3 · compact,delete 30d"]]
+    T1 -->|group order-events| NS[notification-ticket-service :8082]
+    T2 -->|group analytics| NS
+    NS -.->|3 reintentos o payload inválido| DLT[["faster360.orders.events.dlt"]]
+    DLT -->|group dlt| NS
+    KA[kafka-admin-service :8084] -->|AdminClient| T1
+    KA -->|AdminClient| T2
+    KA -->|AdminClient| DLT
+```
+
+### Infraestructura (docker-compose)
+| Archivo | Contenido |
+| :--- | :--- |
+| `docker-compose.rabbitmq-cluster.yml` | Clúster RabbitMQ de 3 nodos (`rabbit1..3`, consolas 15672-15674) |
+| `docker-compose.kafka.yml` | Zookeeper + 3 brokers (RF=3, `min.insync.replicas=2`, auto-creación de tópicos desactivada) |
+| `docker-compose.kafka-ui.yml` | Kafka-UI en http://localhost:8090 para administrar brokers, tópicos y grupos |
+
+### Tópicos (declarados en `kafka-admin-service/src/main/resources/application.yaml`)
+| Tópico | Particiones | Réplicas | Retención | cleanup.policy | Uso |
+| :--- | :-: | :-: | :-: | :--- | :--- |
+| `faster360.orders.events` | 3 | 3 | 7 días | `delete` | Evento operacional por orden |
+| `faster360.orders.analytics` | 6 | 3 | 30 días | `compact,delete` | Datos analíticos por orden |
+| `faster360.orders.events.dlt` | 3 | 3 | 14 días | `delete` | Mensajes que agotaron los reintentos |
+
+### Productores y consumidores
+* **Productor** (`orderservice`): `OrderKafkaPublisher` + `KafkaProducerConfig`. DTOs `OrderCreatedEvent` y `OrderAnalyticsEvent`, serializer JSON propio, `acks=all`, idempotencia, reintentos y compresión `lz4`. Un fallo de Kafka se registra en logs pero no revierte la orden ni el flujo RabbitMQ.
+* **Consumidores** (`notification-ticket-service`): `@KafkaListener` en `consumer/kafka/`, que solo adaptan el mensaje y delegan en `OrderEventProcessor` y `OrderAnalyticsAggregator` (lógica de dominio sin mensajería). Resumen analítico en `GET :8082/api/analytics/summary`.
+* **Consumer groups:** `faster360-order-events-group`, `faster360-analytics-group` y `faster360-dlt-group`. Concurrencia 3 por listener: las particiones se reparten entre hilos y, al levantar más instancias del servicio, se redistribuyen con `CooperativeStickyAssignor`.
+
+### Manejo de errores
+`DefaultErrorHandler` con backoff exponencial (3 reintentos: 1s, 2s, 4s) y `DeadLetterPublishingRecoverer` hacia el DLT. Los payloads inválidos (`InvalidEventException`) y el JSON malformado (`ErrorHandlingDeserializer`) **no se reintentan**: van directo al DLT. `DeadLetterKafkaListener` los audita en logs con la causa original.
+* Prueba de reintentos y DLT: crear una orden con el correo `fail@faster360.com` (falla transitoria simulada).
+
+### Kafka Admin API (`kafka-admin-service`, puerto 8084)
+| Método | Ruta | Acción |
+| :--- | :--- | :--- |
+| `GET` | `/api/kafka/topics` · `/api/kafka/topics/{name}` | Listar / detallar (particiones, líderes, ISR, configs) |
+| `POST` | `/api/kafka/topics` | Crear tópico (`name`, `partitions`, `replicationFactor`, `configs`) |
+| `PUT` | `/api/kafka/topics/{name}/config` | Modificar configuración (`retention.ms`, `cleanup.policy`, ...) |
+| `PUT` | `/api/kafka/topics/{name}/partitions` | Aumentar particiones |
+| `DELETE` | `/api/kafka/topics/{name}` | Eliminar tópico |
+| `GET` | `/api/kafka/consumer-groups` · `/{groupId}` | Listar grupos / detalle con miembros y **lag** por partición |
+| `DELETE` | `/api/kafka/consumer-groups/{groupId}` | Eliminar grupo (sin miembros activos) |
+
+**Seguridad:** todas las rutas `/api/**` exigen `Authorization: Bearer <JWT del IDaaS>`. Sin token válido responde `401`; con token válido pero cuenta no administradora, `403`. Los administradores se definen en `faster360.security.admin-emails` (variable `KAFKA_ADMIN_EMAILS`, por defecto `om.nieto@duocuc.cl`). Se exigen los claims `exp`, `iss` y `email`, y se rechaza `alg: none`. Además, los tópicos del sistema no se pueden eliminar y solo se admiten configuraciones de una lista blanca (`retention.ms`, `cleanup.policy`, `min.insync.replicas`, ...). El CORS solo permite `http://localhost:4200`.
+> Limitación: igual que en `orderservice`, el JWT se valida por estructura y claims, sin verificar la firma contra las claves públicas (JWKS) de Google.
+
+`rabbit-admin-service` (:8083) usa el mismo esquema: exige JWT de administrador y las cuentas permitidas se definen en `RABBIT_ADMIN_EMAILS` (por defecto `om.nieto@duocuc.cl`).
+
+**Requisitos para ejecutar:** Docker Desktop, JDK 17 con la variable `JAVA_HOME` definida (los scripts usan `mvnw`, que la necesita) y Node.js para el frontend.
+
+Ejemplo:
+```bash
+curl -X PUT http://localhost:8084/api/kafka/topics/faster360.orders.events/config \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" -d '{"configs":{"retention.ms":"86400000"}}'
+```

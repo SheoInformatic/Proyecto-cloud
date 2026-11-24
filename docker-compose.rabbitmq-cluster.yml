@@ -1,0 +1,55 @@
+name: faster360
+
+# Clúster RabbitMQ de 3 nodos (peer discovery por configuración clásica).
+# Los microservicios se conectan al nodo 1 (localhost:5672).
+# Consolas: rabbit1 http://localhost:15672 | rabbit2 :15673 | rabbit3 :15674  (guest/guest)
+x-rabbit: &rabbit
+  image: rabbitmq:3-management
+  restart: unless-stopped
+  environment: &rabbit-env
+    RABBITMQ_ERLANG_COOKIE: faster360-secret-cookie
+    RABBITMQ_DEFAULT_USER: guest
+    RABBITMQ_DEFAULT_PASS: guest
+
+services:
+  rabbit1:
+    <<: *rabbit
+    container_name: faster360-rabbit1
+    hostname: rabbit1
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    volumes:
+      - ./rabbitmq-cluster/rabbitmq.conf:/etc/rabbitmq/rabbitmq.conf:ro
+      - rabbit1_data:/var/lib/rabbitmq
+
+  rabbit2:
+    <<: *rabbit
+    container_name: faster360-rabbit2
+    hostname: rabbit2
+    ports:
+      - "5673:5672"
+      - "15673:15672"
+    volumes:
+      - ./rabbitmq-cluster/rabbitmq.conf:/etc/rabbitmq/rabbitmq.conf:ro
+      - rabbit2_data:/var/lib/rabbitmq
+    depends_on:
+      - rabbit1
+
+  rabbit3:
+    <<: *rabbit
+    container_name: faster360-rabbit3
+    hostname: rabbit3
+    ports:
+      - "5674:5672"
+      - "15674:15672"
+    volumes:
+      - ./rabbitmq-cluster/rabbitmq.conf:/etc/rabbitmq/rabbitmq.conf:ro
+      - rabbit3_data:/var/lib/rabbitmq
+    depends_on:
+      - rabbit1
+
+volumes:
+  rabbit1_data:
+  rabbit2_data:
+  rabbit3_data:

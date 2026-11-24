@@ -205,6 +205,10 @@ graph LR
 **Seguridad:** todas las rutas `/api/**` exigen `Authorization: Bearer <JWT del IDaaS>`. Sin token válido responde `401`; con token válido pero cuenta no administradora, `403`. Los administradores se definen en `faster360.security.admin-emails` (variable `KAFKA_ADMIN_EMAILS`, por defecto `om.nieto@duocuc.cl`). Se exigen los claims `exp`, `iss` y `email`, y se rechaza `alg: none`. Además, los tópicos del sistema no se pueden eliminar y solo se admiten configuraciones de una lista blanca (`retention.ms`, `cleanup.policy`, `min.insync.replicas`, ...). El CORS solo permite `http://localhost:4200`.
 > Limitación: igual que en `orderservice`, el JWT se valida por estructura y claims, sin verificar la firma contra las claves públicas (JWKS) de Google.
 
+`rabbit-admin-service` (:8083) usa el mismo esquema: exige JWT de administrador y las cuentas permitidas se definen en `RABBIT_ADMIN_EMAILS` (por defecto `om.nieto@duocuc.cl`).
+
+**Requisitos para ejecutar:** Docker Desktop, JDK 17 con la variable `JAVA_HOME` definida (los scripts usan `mvnw`, que la necesita) y Node.js para el frontend.
+
 Ejemplo:
 ```bash
 curl -X PUT http://localhost:8084/api/kafka/topics/faster360.orders.events/config \

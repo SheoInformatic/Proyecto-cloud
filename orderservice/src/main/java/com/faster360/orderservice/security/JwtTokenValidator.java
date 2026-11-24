@@ -72,7 +72,7 @@ public class JwtTokenValidator {
 
             Matcher tenantMatcher = Pattern.compile("\"tenant_id\"\\s*:\\s*\"([^\"]+)\"").matcher(payloadJson);
             if (tenantMatcher.find()) {
-                log.info("Tenant ID de GCP Identity Platform verificado: {}", tenantMatcher.group(1));
+                log.info("Tenant ID presente en el token (informativo, no se valida): {}", tenantMatcher.group(1));
             }
 
             // 4. Validar política de seguridad IDaaS de GCP: Cuentas autorizadas en el registro (@gmail.com / @duocuc.cl)

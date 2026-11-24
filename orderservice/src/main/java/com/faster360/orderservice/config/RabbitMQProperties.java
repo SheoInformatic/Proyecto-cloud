@@ -12,27 +12,44 @@ public class RabbitMQProperties {
     private RoutingKeys routingKeys = new RoutingKeys();
     private Queues queues = new Queues();
 
+    /** Cada cola tiene su propia routing key de dead-letter, para que cada una caiga en su propia DLQ. */
     public static class RoutingKeys {
         private String orderCreated;
-        private String deadLetter;
+        private String notificationDeadLetter;
+        private String ticketDeadLetter;
+        private String auditDeadLetter;
 
         public String getOrderCreated() { return orderCreated; }
         public void setOrderCreated(String orderCreated) { this.orderCreated = orderCreated; }
-        public String getDeadLetter() { return deadLetter; }
-        public void setDeadLetter(String deadLetter) { this.deadLetter = deadLetter; }
+        public String getNotificationDeadLetter() { return notificationDeadLetter; }
+        public void setNotificationDeadLetter(String notificationDeadLetter) { this.notificationDeadLetter = notificationDeadLetter; }
+        public String getTicketDeadLetter() { return ticketDeadLetter; }
+        public void setTicketDeadLetter(String ticketDeadLetter) { this.ticketDeadLetter = ticketDeadLetter; }
+        public String getAuditDeadLetter() { return auditDeadLetter; }
+        public void setAuditDeadLetter(String auditDeadLetter) { this.auditDeadLetter = auditDeadLetter; }
     }
 
+    /** Tres colas de trabajo y la DLQ propia de cada una. */
     public static class Queues {
         private String notification;
         private String ticket;
-        private String dlq;
+        private String audit;
+        private String notificationDlq;
+        private String ticketDlq;
+        private String auditDlq;
 
         public String getNotification() { return notification; }
         public void setNotification(String notification) { this.notification = notification; }
         public String getTicket() { return ticket; }
         public void setTicket(String ticket) { this.ticket = ticket; }
-        public String getDlq() { return dlq; }
-        public void setDlq(String dlq) { this.dlq = dlq; }
+        public String getAudit() { return audit; }
+        public void setAudit(String audit) { this.audit = audit; }
+        public String getNotificationDlq() { return notificationDlq; }
+        public void setNotificationDlq(String notificationDlq) { this.notificationDlq = notificationDlq; }
+        public String getTicketDlq() { return ticketDlq; }
+        public void setTicketDlq(String ticketDlq) { this.ticketDlq = ticketDlq; }
+        public String getAuditDlq() { return auditDlq; }
+        public void setAuditDlq(String auditDlq) { this.auditDlq = auditDlq; }
     }
 
     public String getExchange() { return exchange; }

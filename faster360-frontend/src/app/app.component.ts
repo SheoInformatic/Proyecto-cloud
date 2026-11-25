@@ -247,7 +247,7 @@ export class AppComponent implements OnInit {
   gcpTenantId = 'SergioVelasquez-dnfj9';
   selectedTenantProfile: 'sergio' | 'omar' | 'custom' = 'sergio';
   gcpEmail = 'sergiomarcelo3672@gmail.com';
-  gcpPassword = 'Password123!';
+  gcpPassword = '';
   gcpAuthAction: 'login' | 'signup' = 'login';
   isGcpLoading = false;
   customAuthEmail = '';
@@ -317,11 +317,11 @@ export class AppComponent implements OnInit {
     if (this.gcpTenantId.includes('omar')) {
       this.selectedTenantProfile = 'omar';
       this.gcpEmail = 'omar.nieto@gmail.com';
-      this.gcpPassword = 'AdminPassword123!';
+      this.gcpPassword = '';
     } else if (this.gcpTenantId.includes('sergio')) {
       this.selectedTenantProfile = 'sergio';
       this.gcpEmail = 'sergio.velasquez@gmail.com';
-      this.gcpPassword = 'Password123!';
+      this.gcpPassword = '';
     } else {
       this.selectedTenantProfile = 'custom';
     }
@@ -657,11 +657,11 @@ export class AppComponent implements OnInit {
     if (profile === 'sergio') {
       this.gcpTenantId = 'SergioVelasquez-dnfj9';
       this.gcpEmail = 'sergiomarcelo3672@gmail.com';
-      this.gcpPassword = 'Password123!';
+      this.gcpPassword = '';
     } else if (profile === 'omar') {
       this.gcpTenantId = 'OmarNieto-npke9';
       this.gcpEmail = 'om.nieto@duocuc.cl';
-      this.gcpPassword = 'AdminPassword123!';
+      this.gcpPassword = '';
     }
     this.saveCurrentGcpConfig(false);
   }
@@ -696,33 +696,9 @@ export class AppComponent implements OnInit {
       return;
     }
 
-    // Validación estricta de credenciales para usuarios de evaluación
-    if (this.selectedTenantProfile === 'sergio' || this.selectedTenantProfile === 'omar') {
-      const expectedPassword = isOmar ? 'AdminPassword123!' : 'Password123!';
-      if (this.gcpPassword.trim() !== expectedPassword) {
-        this.showToast('error', 'Contraseña incorrecta', `Contraseña incorrecta para ${email}. Verifica e intenta de nuevo.`);
-        return;
-      }
-    } else {
-      // Si es un Tenant manual / usuario personalizado en GCP, validar contra el endpoint de GCP Identity Platform
-      this.submitGcpAuth();
-      return;
-    }
-
-    const session = this.authService.loginWithGcpTenant({
-      tenantId: this.gcpTenantId,
-      email: email,
-      name: name,
-      role: role,
-      projectId: this.gcpProjectId,
-      clientId: this.gcpClientId
-    });
-
-    this.currentUser = session;
-    this.checkoutForm.name = session.name;
-    this.checkoutForm.email = session.email;
-    this.closeAuthModal();
-    this.showToast('success', 'IDaaS: Credenciales Válidas', `Sesión iniciada con Tenant: ${this.gcpTenantId}`);
+    // Las credenciales siempre se validan contra Google Cloud Identity Platform (sin contraseñas en el código)
+    void name; void role;
+    this.submitGcpAuth();
   }
 
   launchGoogleOAuthWindow(): void {
@@ -816,7 +792,7 @@ export class AppComponent implements OnInit {
     const user = this.authService.PREDEFINED_USERS.find(u => u.id === userId);
     if (user) {
       this.gcpEmail = user.email;
-      this.gcpPassword = user.defaultPassword;
+      this.gcpPassword = '';
       this.customAuthEmail = user.email;
       this.customAuthName = user.name;
       this.showToast('info', 'Usuario Seleccionado', `Datos de ${user.name} (${user.role}) cargados.`);
@@ -830,24 +806,10 @@ export class AppComponent implements OnInit {
     const targetUser = this.authService.PREDEFINED_USERS.find(u => u.id === targetUserId);
     if (!targetUser) return;
 
-    if (this.currentUser.provider === 'gcp-identity-platform') {
-      this.isGcpLoading = true;
-      this.authService.loginWithGcpIdentity(this.gcpApiKey, targetUser.email, targetUser.defaultPassword).subscribe({
-        next: () => {
-          this.isGcpLoading = false;
-          this.showToast('success', 'Usuario Cambiado (GCP)', `Sesión activa como ${targetUser.name} [${targetUser.role}]`);
-        },
-        error: () => {
-          this.isGcpLoading = false;
-          this.loadPredefinedUser(targetUserId);
-          this.openAuthModal();
-          this.showToast('info', 'Autenticación requerida', `Registra o inicia sesión con ${targetUser.email}`);
-        }
-      });
-    } else {
-      this.loginWithPreset(targetUserId === 'cliente' ? 'cliente' : 'arquitecto');
-      this.showToast('success', 'Usuario Cambiado', `Sesión activa como ${targetUser.name} [${targetUser.role}]`);
-    }
+    // La contraseña no se guarda en el código: se pide al usuario.
+    this.loadPredefinedUser(targetUserId);
+    this.openAuthModal();
+    this.showToast('info', 'Autenticación requerida', `Inicia sesión con ${targetUser.email}`);
   }
 
   renewTokenManual(): void {

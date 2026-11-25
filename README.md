@@ -1,6 +1,6 @@
 # Faster 360° — Arquitectura Cloud, Mensajería Asíncrona y Streaming (EP3 + EP5)
 
-Plataforma e-commerce desacoplada basada en microservicios, mensajería asíncrona empresarial con **RabbitMQ**, persistencia en **PostgreSQL (Cloud SQL)** y autenticación **IDaaS Multi-Tenant** mediante **Google Cloud Platform (Identity Platform & Google OAuth 2.0)**.
+Plataforma e-commerce desacoplada basada en microservicios, mensajería asíncrona empresarial con **RabbitMQ**, persistencia en **PostgreSQL** (contenedor Docker; en GCP corre dentro de la VM de Compute Engine) y autenticación **IDaaS Multi-Tenant** mediante **Google Cloud Platform (Identity Platform & Google OAuth 2.0)**.
 
 ---
 
@@ -35,7 +35,7 @@ graph TD
     end
 
     subgraph Storage ["Persistencia"]
-        DB[(PostgreSQL Cloud SQL :5432)]
+        DB[(PostgreSQL en Docker :5432)]
     end
 
     A -->|1. OAuth 2.0| GCP
@@ -70,7 +70,7 @@ graph TD
 | **Rabbit Admin Service** | Spring Boot / Java 17 | `8083` | [http://localhost:8083](http://localhost:8083) |
 | **Kafka Admin Service** | Spring Boot / Java 17 | `8084` | [http://localhost:8084/api/kafka/topics](http://localhost:8084/api/kafka/topics) |
 | **Kafka-UI** | provectuslabs/kafka-ui | `8090` | [http://localhost:8090](http://localhost:8090) |
-| **Kafka Brokers (x3)** | cp-kafka 7.6 + Zookeeper | `9092/9093/9094` | `localhost:9092,localhost:9093,localhost:9094` |
+| **Kafka Brokers (x3)** | cp-kafka 7.6 + Zookeeper (3 nodos) | `9092/9093/9094` | `localhost:9092,localhost:9093,localhost:9094` |
 | **RabbitMQ Consola Web** | RabbitMQ 3 Management | `15672` | [http://localhost:15672](http://localhost:15672) (`guest`/`guest`) |
 | **RabbitMQ Protocolo AMQP** | Protocolo AMQP 0-9-1 | `5672` | `amqp://guest:guest@localhost:5672` |
 | **Base de Datos** | PostgreSQL 15 Alpine | `5432` | `jdbc:postgresql://localhost:5432/faster360_db` |
@@ -106,7 +106,7 @@ El repositorio incluye un script lanzador que inicia Docker y todos los microser
 ```bash
 docker compose up -d                                         # PostgreSQL
 docker compose -f docker-compose.rabbitmq-cluster.yml up -d  # RabbitMQ (clúster de 3 nodos)
-docker compose -f docker-compose.kafka.yml up -d             # Zookeeper + 3 brokers Kafka
+docker compose -f docker-compose.kafka.yml up -d             # 3 nodos Zookeeper + 3 brokers Kafka
 docker compose -f docker-compose.kafka-ui.yml up -d          # Kafka-UI (requiere el anterior)
 ```
 
@@ -192,7 +192,7 @@ graph LR
 | Archivo | Contenido |
 | :--- | :--- |
 | `docker-compose.rabbitmq-cluster.yml` | Clúster RabbitMQ de 3 nodos (`rabbit1..3`, consolas 15672-15674) |
-| `docker-compose.kafka.yml` | Zookeeper + 3 brokers (RF=3, `min.insync.replicas=2`, auto-creación de tópicos desactivada) |
+| `docker-compose.kafka.yml` | 3 nodos Zookeeper + 3 brokers (RF=3, `min.insync.replicas=2`, auto-creación de tópicos desactivada) |
 | `docker-compose.kafka-ui.yml` | Kafka-UI en http://localhost:8090 para administrar brokers, tópicos y grupos |
 
 ### Tópicos (declarados en `kafka-admin-service/src/main/resources/application.yaml`)

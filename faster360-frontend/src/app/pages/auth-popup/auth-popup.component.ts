@@ -283,9 +283,6 @@ import { AuthService, UserSession } from '../../core/services/auth.service';
                 required
                 autofocus
               />
-              <small *ngIf="isEvalUser" style="color: #64748b; font-size: 11px; margin-top: 6px; display: block;">
-                Pista de evaluación: <strong style="color: #94a3b8;">{{ isOmar ? 'AdminPassword123!' : 'Password123!' }}</strong>
-              </small>
             </div>
 
             <button
@@ -851,18 +848,7 @@ export class AuthPopupComponent implements OnInit {
       return;
     }
 
-    // 1. Validación de Usuarios de Evaluación (Sergio / Omar)
-    if (this.isEvalUser) {
-      const expectedPassword = this.isOmar ? 'AdminPassword123!' : 'Password123!';
-      if (pass !== expectedPassword) {
-        this.errorMessage = `Contraseña incorrecta para ${this.selectedUserName}. Inténtalo de nuevo.`;
-        return;
-      }
-      this.completeAuth(this.selectedUserName, this.selectedEmail, this.selectedRole);
-      return;
-    }
-
-    // 2. Validación Real contra Google Cloud Identity Platform REST
+    // Validación real contra Google Cloud Identity Platform REST (para todos los usuarios)
     this.isLoading = true;
     const apiKey = this.authService.getSavedApiKey();
     const tenantId = this.isOmar ? 'OmarNieto-npke9' : 'SergioVelasquez-dnfj9';

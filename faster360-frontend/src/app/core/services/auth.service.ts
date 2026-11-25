@@ -6,7 +6,6 @@ export interface PredefinedUser {
   id: 'cliente' | 'admin';
   name: string;
   email: string;
-  defaultPassword: string;
   role: string;
   avatar: string;
   description: string;
@@ -69,7 +68,6 @@ export class AuthService {
       id: 'cliente',
       name: 'Sergio Velásquez',
       email: 'sergiomarcelo3672@gmail.com',
-      defaultPassword: 'Password123!',
       role: 'Cliente / Comprador',
       avatar: 'SV',
       description: 'Usuario con cuenta de Gmail autorizada en GCP Identity Platform (Tenant Sergio).'
@@ -78,7 +76,6 @@ export class AuthService {
       id: 'admin',
       name: 'Omar Nieto',
       email: 'om.nieto@duocuc.cl',
-      defaultPassword: 'AdminPassword123!',
       role: 'Cloud Architect / RabbitMQ Admin',
       avatar: 'ON',
       description: 'Usuario administrador con cuenta Duoc Google autorizada en GCP Identity Platform (Tenant Omar).'

@@ -1,19 +1,42 @@
 name: faster360
 
-# Arquitectura Kafka: 1 Zookeeper + 3 brokers.
+# Arquitectura Kafka: ensamble de 3 nodos Zookeeper + 3 brokers.
 # Desde el host (microservicios): localhost:9092, localhost:9093, localhost:9094
 # Dentro de la red Docker (Kafka-UI): kafka1:29092, kafka2:29092, kafka3:29092
+x-zookeeper: &zookeeper
+  image: confluentinc/cp-zookeeper:7.6.1
+  restart: unless-stopped
+  healthcheck:
+    test: ["CMD-SHELL", "echo ruok | nc localhost 2181 | grep imok"]
+    interval: 5s
+    timeout: 5s
+    retries: 24
+  networks:
+    - faster360-kafka
+
+x-zookeeper-env: &zookeeper-env
+  ZOOKEEPER_CLIENT_PORT: 2181
+  ZOOKEEPER_TICK_TIME: 2000
+  ZOOKEEPER_INIT_LIMIT: 10
+  ZOOKEEPER_SYNC_LIMIT: 5
+  ZOOKEEPER_SERVERS: zookeeper1:2888:3888;zookeeper2:2888:3888;zookeeper3:2888:3888
+  KAFKA_OPTS: "-Dzookeeper.4lw.commands.whitelist=ruok,srvr,stat"
+
 x-kafka: &kafka
   image: confluentinc/cp-kafka:7.6.1
   restart: unless-stopped
   depends_on:
-    zookeeper:
+    zookeeper1:
+      condition: service_healthy
+    zookeeper2:
+      condition: service_healthy
+    zookeeper3:
       condition: service_healthy
   networks:
     - faster360-kafka
 
 x-kafka-env: &kafka-env
-  KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+  KAFKA_ZOOKEEPER_CONNECT: zookeeper1:2181,zookeeper2:2181,zookeeper3:2181
   KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: INTERNAL:PLAINTEXT,EXTERNAL:PLAINTEXT
   KAFKA_INTER_BROKER_LISTENER_NAME: INTERNAL
   KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 3
@@ -25,23 +48,35 @@ x-kafka-env: &kafka-env
   KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
 
 services:
-  zookeeper:
-    image: confluentinc/cp-zookeeper:7.6.1
-    container_name: faster360-zookeeper
-    restart: unless-stopped
+  zookeeper1:
+    <<: *zookeeper
+    container_name: faster360-zookeeper1
+    hostname: zookeeper1
     ports:
       - "2181:2181"
     environment:
-      ZOOKEEPER_CLIENT_PORT: 2181
-      ZOOKEEPER_TICK_TIME: 2000
-      KAFKA_OPTS: "-Dzookeeper.4lw.commands.whitelist=ruok,srvr"
-    healthcheck:
-      test: ["CMD-SHELL", "echo ruok | nc localhost 2181 | grep imok"]
-      interval: 5s
-      timeout: 5s
-      retries: 12
-    networks:
-      - faster360-kafka
+      <<: *zookeeper-env
+      ZOOKEEPER_SERVER_ID: 1
+
+  zookeeper2:
+    <<: *zookeeper
+    container_name: faster360-zookeeper2
+    hostname: zookeeper2
+    ports:
+      - "2182:2181"
+    environment:
+      <<: *zookeeper-env
+      ZOOKEEPER_SERVER_ID: 2
+
+  zookeeper3:
+    <<: *zookeeper
+    container_name: faster360-zookeeper3
+    hostname: zookeeper3
+    ports:
+      - "2183:2181"
+    environment:
+      <<: *zookeeper-env
+      ZOOKEEPER_SERVER_ID: 3
 
   kafka1:
     <<: *kafka

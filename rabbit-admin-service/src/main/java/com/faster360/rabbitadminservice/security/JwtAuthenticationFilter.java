@@ -24,6 +24,16 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         this.validator = validator;
     }
 
+    static boolean isDocumentationPath(String uri) {
+        if (uri == null || uri.contains(";") || uri.contains("%") || uri.contains("..") || uri.contains("//")) {
+            return false;
+        }
+        return uri.equals("/v3/api-docs")
+                || uri.equals("/v3/api-docs/swagger-config")
+                || uri.equals("/swagger-ui.html")
+                || uri.startsWith("/swagger-ui/");
+    }
+
     @Override
     protected void doFilterInternal(HttpServletRequest request,
                                     HttpServletResponse response,
@@ -31,6 +41,13 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         // Se autentica TODO salvo el pre-flight CORS (que no lleva credenciales). No se decide
         // según un prefijo de URL para evitar bypass por rutas con ';', '//' o codificaciones.
         if ("OPTIONS".equalsIgnoreCase(request.getMethod())) {
+            chain.doFilter(request, response);
+            return;
+        }
+
+        // La documentación (Swagger UI y la especificación OpenAPI) se sirve sin token. Solo rutas
+        // exactas y solo GET; cualquier URI con ';', '%', '..' o '//' sigue exigiendo JWT.
+        if ("GET".equalsIgnoreCase(request.getMethod()) && isDocumentationPath(request.getRequestURI())) {
             chain.doFilter(request, response);
             return;
         }

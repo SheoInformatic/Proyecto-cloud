@@ -857,7 +857,7 @@ export class AuthPopupComponent implements OnInit {
       next: (res) => {
         this.isLoading = false;
         const name = res.displayName || this.selectedUserName || email.split('@')[0];
-        this.completeAuth(name, res.email, 'Usuario GCP Identity Platform');
+        this.completeAuth(name, res.email, 'Usuario GCP Identity Platform', res.idToken, tenantId);
       },
       error: (err) => {
         this.isLoading = false;
@@ -907,7 +907,8 @@ export class AuthPopupComponent implements OnInit {
       provider: isGoogle ? 'gcp-identity-platform' : 'idaas-preset',
       tenantId: tenantId,
       role: roleDescription,
-      expiresAt: Date.now() + (24 * 60 * 60 * 1000)
+      // Con un token real de Identity Platform la sesión dura lo que el token (1 h)
+      expiresAt: Date.now() + (externalToken ? 60 * 60 * 1000 : 24 * 60 * 60 * 1000)
     };
 
     // 1. Notificar a la ventana principal (opener)
